@@ -2,42 +2,89 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { usePrototypeStore } from "@/components/prototype-store";
 import { useToast } from "@/components/toast";
 import { getFeatureLabel, type FeatureType } from "@/lib/prototype-data";
 
 export function FakeUploadCard({
-  fileName = "徐怡然-产品经理简历.pdf"
+  fileName = "徐怡然-产品经理简历.pdf",
+  variant = "default"
 }: {
   fileName?: string;
+  variant?: "default" | "resume";
 }) {
   const [selected, setSelected] = useState(false);
+  const [currentName, setCurrentName] = useState(fileName);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const { push } = useToast();
 
   return (
-    <div className="upload-box">
+    <div
+      className={`upload-box${variant === "resume" ? " upload-box-resume" : ""}`}
+      onClick={() => {
+        if (variant === "resume") {
+          inputRef.current?.click();
+        }
+      }}
+      role={variant === "resume" ? "button" : undefined}
+      tabIndex={variant === "resume" ? 0 : undefined}
+      onKeyDown={(event) => {
+        if (variant !== "resume") {
+          return;
+        }
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        style={{ display: "none" }}
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (!file) {
+            return;
+          }
+          setSelected(true);
+          setCurrentName(file.name);
+          push("文件已选择：Word 将直接读取文本，PDF 将走 PyMuPDF4LLM 提取。");
+        }}
+      />
       <div className="upload-icon">↥</div>
       <div>
-        <div style={{ fontSize: 20, fontWeight: 700 }}>
-          {selected ? "已选择简历文件" : "点击选择一份简历"}
+        <div
+          style={{
+            fontSize: variant === "resume" ? 18 : 20,
+            fontWeight: 700,
+            textAlign: variant === "resume" ? "center" : "left"
+          }}
+        >
+          {selected ? currentName : "点击或拖拽上传简历"}
         </div>
-        <p className="page-subtitle" style={{ marginTop: 8 }}>
+        <p
+          className="page-subtitle"
+          style={{ marginTop: 8, textAlign: variant === "resume" ? "center" : "left" }}
+        >
           {selected
-            ? fileName
-            : "支持 PDF / Word 演示。当前为静态原型，点击后会填充一份示例简历。"}
+            ? "已完成选择，可继续填写目标岗位 JD。"
+            : "仅支持PDF/Word格式（不支持加密/扫描件），10MB以内"}
         </p>
       </div>
-      <button
-        type="button"
-        className="button-secondary"
-        onClick={() => {
-          setSelected(true);
-          push("示例简历已就绪，后续可接入真实上传。");
-        }}
-      >
-        {selected ? "重新选择" : "选择文件"}
-      </button>
+      {variant === "resume" ? null : (
+        <button
+          type="button"
+          className="button-secondary"
+          onClick={() => {
+            inputRef.current?.click();
+          }}
+        >
+          {selected ? "重新选择" : "选择文件"}
+        </button>
+      )}
     </div>
   );
 }

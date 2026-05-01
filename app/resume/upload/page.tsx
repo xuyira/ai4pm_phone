@@ -1,50 +1,61 @@
 import Link from "next/link";
 import {
   FakeUploadCard,
-  RecordSummaryLinks,
   ResumeTypeSwitch
 } from "@/components/interactive";
-import { PageIntro, StepStrip } from "@/components/ui";
 
 export default function ResumeUploadPage() {
   return (
     <div>
-      <PageIntro
-        eyebrow="简历优化"
-        title="上传简历和目标 JD，AI 会输出优化结果"
-        subtitle="本轮原型先做静态填写演示，但页面结构会直接保留给后续真实 AI 接入。"
-      />
-      <StepStrip steps={["上传简历与 JD", "AI 处理中", "结果页"]} active={0} />
-      <section className="card section form-stack">
-        <FakeUploadCard />
+      <section className="section">
+        <h1 className="resume-page-title">简历优化</h1>
+      </section>
 
-        <div>
-          <label className="field-label">岗位标题</label>
-          <input className="input" defaultValue="腾讯产品策划" />
+      <section className="section form-stack">
+        <div className="resume-block">
+          <div className="resume-block-head">
+            <span className="resume-block-index">1</span>
+            <h2 className="resume-block-title">上传简历</h2>
+          </div>
+          <div className="card">
+            <FakeUploadCard variant="resume" />
+          </div>
         </div>
 
-        <div>
-          <label className="field-label">岗位类型</label>
-          <ResumeTypeSwitch />
+        <div className="resume-block">
+          <div className="resume-block-head">
+            <span className="resume-block-index">2</span>
+            <h2 className="resume-block-title">填写目标岗位JD</h2>
+          </div>
+          <div className="card form-stack">
+            <div>
+              <label className="field-label">岗位标题</label>
+              <input className="input" placeholder="如：高级产品经理" />
+            </div>
+
+            <div>
+              <label className="field-label">岗位类型</label>
+              <ResumeTypeSwitch />
+            </div>
+
+            <div>
+              <label className="field-label">岗位内容</label>
+              <textarea
+                className="textarea"
+                placeholder="请粘贴目标岗位的职责描述和任职要求..."
+              />
+            </div>
+
+            <div>
+              <label className="field-label">其他备注</label>
+              <textarea
+                className="textarea"
+                placeholder="其他需要补充的信息..."
+              />
+            </div>
+          </div>
         </div>
 
-        <div>
-          <label className="field-label">岗位内容 JD</label>
-          <textarea
-            className="textarea"
-            defaultValue="负责内容产品规划、需求分析、用户调研与策略优化；能够与设计、研发、运营协同推进版本落地。"
-          />
-        </div>
-
-        <div>
-          <label className="field-label">其他备注</label>
-          <textarea
-            className="textarea"
-            defaultValue="希望更突出数据分析能力、项目推进能力，以及对校园产品场景的理解。"
-          />
-        </div>
-
-        <RecordSummaryLinks />
         <Link href="/resume/loading" className="button">
           开始简历优化
         </Link>
