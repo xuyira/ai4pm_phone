@@ -55,22 +55,22 @@ export default function HomePage() {
         <h2 className="info-block-title">功能介绍</h2>
         <div>
           <p className="info-item-copy">
-            <span className="info-item-title">AI经历深挖：</span>
+            <span className="info-item-title">1. AI经历深挖：</span>
             上传简历，AI会从产品经理8维能力模型出发，帮你在聊天中挖掘那些你本来就有，只是还没有写出来的产品能力与经历亮点。
           </p>
 
           <p className="info-item-copy">
-            <span className="info-item-title">AI简历优化：</span>
+            <span className="info-item-title">2. AI简历优化：</span>
             上传简历与目标岗位JD，AI会从简历表现和岗位匹配两个维度，对现有简历进行系统优化，为你生成通过率更高的简历。
           </p>
 
           <p className="info-item-copy">
-            <span className="info-item-title">AI岗位投递：</span>
+            <span className="info-item-title">3. AI岗位投递：</span>
             上传简历与求职偏好，AI会帮你筛选高匹配岗位，自动生成打招呼话术，辅助你高效海投。
           </p>
 
           <p className="info-item-copy" style={{ marginBottom: 0 }}>
-            <span className="info-item-title">AI模拟面试：</span>
+            <span className="info-item-title">4. AI模拟面试：</span>
             上传简历和目标岗位JD，AI会从行为面、经历面、业务面以及行业洞察四大角度生成面试题及其优质回答，帮你提前准备面试。
           </p>
         </div>

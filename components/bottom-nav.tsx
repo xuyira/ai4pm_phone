@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { usePrototypeStore } from "@/components/prototype-store";
 
 const items = [
   { href: "/", label: "首页" },
@@ -10,6 +11,7 @@ const items = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { clearResumeDraft } = usePrototypeStore();
 
   return (
     <nav className="bottom-nav" aria-label="底部导航">
@@ -22,6 +24,9 @@ export function BottomNav() {
             key={item.href}
             href={item.href}
             className={`bottom-link${isActive ? " is-active" : ""}`}
+            onClick={() => {
+              clearResumeDraft();
+            }}
           >
             <span>{item.label}</span>
           </Link>

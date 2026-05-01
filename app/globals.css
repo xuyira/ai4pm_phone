@@ -552,6 +552,26 @@ textarea {
   background: linear-gradient(180deg, rgba(251, 248, 242, 0.97) 0%, rgba(240, 233, 224, 0.95) 100%);
 }
 
+.radar-svg {
+  width: 100%;
+  height: auto;
+  margin-top: 12px;
+}
+
+.radar-labels {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.radar-label-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .score-big {
   font-size: 52px;
   font-weight: 800;
@@ -602,6 +622,18 @@ textarea {
   box-shadow: 0 14px 34px rgba(199, 156, 70, 0.1);
 }
 
+.rich-preview {
+  display: grid;
+  gap: 8px;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.rich-preview-line {
+  white-space: pre-wrap;
+  line-height: 1.65;
+}
+
 .preview-line {
   height: 10px;
   border-radius: 999px;
@@ -615,6 +647,25 @@ textarea {
 
 .preview-line.mid {
   width: 76%;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(244, 232, 205, 0.92);
+  color: var(--brand-deep);
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(220, 193, 145, 0.82);
 }
 
 .two-col {
@@ -863,6 +914,10 @@ textarea {
 
   .two-col,
   .score-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-2 {
     grid-template-columns: 1fr;
   }
 

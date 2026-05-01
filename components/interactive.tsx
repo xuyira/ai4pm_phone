@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePrototypeStore } from "@/components/prototype-store";
 import { useToast } from "@/components/toast";
 import { getFeatureLabel, type FeatureType } from "@/lib/prototype-data";
@@ -17,15 +17,33 @@ export function FakeUploadCard({
   const [selected, setSelected] = useState(false);
   const [currentName, setCurrentName] = useState(fileName);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const { push } = useToast();
+  const { resumeDraft, setResumeExtraction } = usePrototypeStore();
+
+  const openFilePicker = () => {
+    if (inputRef.current) {
+      inputRef.current.value = "";
+      inputRef.current.click();
+    }
+  };
+
+  useEffect(() => {
+    if (variant !== "resume" || !resumeDraft.extractedResume) {
+      return;
+    }
+
+    setSelected(true);
+    setCurrentName(resumeDraft.extractedResume.filename);
+    setParseError(null);
+  }, [resumeDraft.extractedResume, variant]);
 
   return (
     <div
       className={`upload-box${variant === "resume" ? " upload-box-resume" : ""}`}
       onClick={() => {
         if (variant === "resume") {
-          inputRef.current?.click();
+          openFilePicker();
         }
       }}
       role={variant === "resume" ? "button" : undefined}
@@ -36,14 +54,14 @@ export function FakeUploadCard({
         }
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          inputRef.current?.click();
+          openFilePicker();
         }
       }}
     >
       <input
         ref={inputRef}
         type="file"
-        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         style={{ display: "none" }}
         onChange={(event) => {
           const file = event.target.files?.[0];
@@ -53,6 +71,7 @@ export function FakeUploadCard({
           setSelected(true);
           setCurrentName(file.name);
           setIsExtracting(true);
+          setParseError(null);
 
           const formData = new FormData();
           formData.append("file", file);
@@ -66,12 +85,12 @@ export function FakeUploadCard({
               if (!response.ok) {
                 throw new Error(payload.detail ?? "解析失败");
               }
-              push(
-                `简历提取完成：${payload.fileType.toUpperCase()} 已通过 ${payload.parser} 解析，共 ${payload.charCount} 字。`
-              );
+              if (variant === "resume") {
+                setResumeExtraction(payload);
+              }
             })
             .catch((error: Error) => {
-              push(`文件已选择，但解析服务暂不可用：${error.message}`);
+              setParseError(error.message);
             })
             .finally(() => {
               setIsExtracting(false);
@@ -96,16 +115,21 @@ export function FakeUploadCard({
           {selected
             ? isExtracting
               ? "正在提取简历文本，请稍候..."
-              : "已完成选择，可继续填写目标岗位 JD。"
-            : "仅支持PDF/Word格式（不支持加密/扫描件），10MB以内"}
+              : parseError
+                ? `当前选择文件解析失败：${parseError}，点击可更换文件`
+                : variant === "resume" && resumeDraft.extractedResume
+                  ? `当前选择文件已完成解析（${resumeDraft.extractedResume.charCount}字），点击可更换文件`
+                  : "已完成选择，可继续填写目标岗位 JD。"
+            : "仅支持 PDF/DOCX 格式（不支持加密/扫描件），10MB 以内"}
         </p>
       </div>
-      {variant === "resume" ? null : (
+      {variant !== "resume" && (
         <button
           type="button"
           className="button-secondary"
-          onClick={() => {
-            inputRef.current?.click();
+          onClick={(event) => {
+            event.stopPropagation();
+            openFilePicker();
           }}
         >
           {selected ? "重新选择" : "选择文件"}
@@ -123,8 +147,22 @@ export function RecordSummaryLinks() {
   );
 }
 
-export function ResumeTypeSwitch() {
-  const [value, setValue] = useState<"intern" | "fulltime">("intern");
+export function ResumeTypeSwitch({
+  value: controlledValue,
+  onChange
+}: {
+  value?: "intern" | "fulltime";
+  onChange?: (value: "intern" | "fulltime") => void;
+}) {
+  const [uncontrolledValue, setUncontrolledValue] = useState<"intern" | "fulltime">("intern");
+  const value = controlledValue ?? uncontrolledValue;
+
+  const setValue = (nextValue: "intern" | "fulltime") => {
+    if (controlledValue === undefined) {
+      setUncontrolledValue(nextValue);
+    }
+    onChange?.(nextValue);
+  };
 
   return (
     <div className="grid-2">
@@ -191,14 +229,27 @@ export function CopyButton({ text }: { text: string }) {
   );
 }
 
-export function ExportButton({ label }: { label: string }) {
+export function ExportButton({
+  label,
+  onClick
+}: {
+  label: string;
+  onClick?: () => void | Promise<void>;
+}) {
   const { push } = useToast();
 
   return (
     <button
       type="button"
       className="button-secondary"
-      onClick={() => push(`${label} 已加入导出队列，正式版会保存到本地。`)}
+      onClick={() => {
+        if (onClick) {
+          void onClick();
+          return;
+        }
+
+        push(`${label} 已加入导出队列，正式版会保存到本地。`);
+      }}
     >
       {label}
     </button>

@@ -1,10 +1,29 @@
-import Link from "next/link";
-import {
-  FakeUploadCard,
-  ResumeTypeSwitch
-} from "@/components/interactive";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { FakeUploadCard, ResumeTypeSwitch } from "@/components/interactive";
+import { usePrototypeStore } from "@/components/prototype-store";
+import { useToast } from "@/components/toast";
 
 export default function ResumeUploadPage() {
+  const router = useRouter();
+  const { push } = useToast();
+  const { resumeDraft, updateResumeDraft } = usePrototypeStore();
+
+  const handleStart = () => {
+    if (!resumeDraft.extractedResume?.content.trim()) {
+      push("请先上传简历，并等待文本提取完成。");
+      return;
+    }
+
+    if (!resumeDraft.jobDescription.trim()) {
+      push("请先填写目标岗位 JD。");
+      return;
+    }
+
+    router.push("/resume/loading");
+  };
+
   return (
     <div>
       <section className="section">
@@ -30,12 +49,20 @@ export default function ResumeUploadPage() {
           <div className="card form-stack">
             <div>
               <label className="field-label">岗位标题</label>
-              <input className="input" placeholder="如：高级产品经理" />
+              <input
+                className="input"
+                placeholder="如：高级产品经理"
+                value={resumeDraft.jobTitle}
+                onChange={(event) => updateResumeDraft({ jobTitle: event.target.value })}
+              />
             </div>
 
             <div>
               <label className="field-label">岗位类型</label>
-              <ResumeTypeSwitch />
+              <ResumeTypeSwitch
+                value={resumeDraft.jobType}
+                onChange={(jobType) => updateResumeDraft({ jobType })}
+              />
             </div>
 
             <div>
@@ -43,6 +70,8 @@ export default function ResumeUploadPage() {
               <textarea
                 className="textarea"
                 placeholder="请粘贴目标岗位的职责描述和任职要求..."
+                value={resumeDraft.jobDescription}
+                onChange={(event) => updateResumeDraft({ jobDescription: event.target.value })}
               />
             </div>
 
@@ -51,14 +80,16 @@ export default function ResumeUploadPage() {
               <textarea
                 className="textarea"
                 placeholder="其他需要补充的信息..."
+                value={resumeDraft.notes}
+                onChange={(event) => updateResumeDraft({ notes: event.target.value })}
               />
             </div>
           </div>
         </div>
 
-        <Link href="/resume/loading" className="button">
+        <button type="button" className="button" onClick={handleStart}>
           开始简历优化
-        </Link>
+        </button>
       </section>
     </div>
   );
