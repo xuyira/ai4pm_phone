@@ -16,11 +16,13 @@ export default function HomePage() {
       <section className="section">
         <div className="home-feature-grid">
           {features.map((feature) => {
-            const isSoon =
+            const hasComingSoonLabel =
+              feature.type === "experience" || feature.type === "delivery" || feature.type === "interview";
+            const isDisabled =
               feature.type === "delivery" || feature.type === "interview";
             const content = (
               <>
-                {isSoon ? <span className="corner-label">{"\u3000暂未上线"}</span> : null}
+                {hasComingSoonLabel ? <span className="corner-label">{"\u3000暂未上线"}</span> : null}
                 <div style={{ fontSize: 14, textAlign: "center", marginTop: 6 }}>
                   AI
                 </div>
@@ -30,7 +32,7 @@ export default function HomePage() {
               </>
             );
 
-            return isSoon ? (
+            return isDisabled ? (
               <div
                 key={feature.type}
                 className={`feature-card home-feature-card ${feature.tone} is-disabled`}

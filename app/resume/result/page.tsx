@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExportButton } from "@/components/interactive";
@@ -16,7 +16,9 @@ function formatJobType(jobType: "intern" | "fulltime") {
 export default function ResumeResultPage() {
   const router = useRouter();
   const { push } = useToast();
-  const { resumeDraft, resumeOptimization } = usePrototypeStore();
+  const { resumeDraft, resumeOptimization, setResumeOptimization } = usePrototypeStore();
+  const [revisionNotes, setRevisionNotes] = useState("");
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   useEffect(() => {
     if (!resumeOptimization) {
@@ -107,6 +109,43 @@ export default function ResumeResultPage() {
     push("DOCX 已生成。");
   };
 
+  const handleRegenerate = async () => {
+    if (!revisionNotes.trim()) {
+      push("请先输入你的建议，再点击重新生成。建议中的关键点会直接影响本次改写。");
+      return;
+    }
+
+    setIsRegenerating(true);
+    try {
+      const response = await fetch("/api/resume/optimize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          jobTitle: resumeDraft.jobTitle,
+          jobType: resumeDraft.jobType,
+          jobDescription: resumeDraft.jobDescription,
+          notes: resumeDraft.notes,
+          revisionNotes: revisionNotes.trim(),
+          resumeText: resumeDraft.extractedResume?.content ?? ""
+        })
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.detail ?? "重新生成失败");
+      }
+
+      setResumeOptimization(payload.result);
+      push("已根据你的建议重新生成简历结果。原始简历评分保持不变。");
+    } catch (error) {
+      push(error instanceof Error ? error.message : "重新生成失败");
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
   return (
     <div>
       <PageIntro
@@ -164,6 +203,31 @@ export default function ResumeResultPage() {
             label="导出 PDF"
             onClick={() => push("当前已支持导出 DOCX，PDF 可在下一步通过 DOCX 转换接入。")}
           />
+        </div>
+      </section>
+
+      <section className="card form-stack">
+        <div className="record-title">补充建议并重新生成</div>
+        <div className="record-subtitle" style={{ marginBottom: 12 }}>
+          请输入你希望本次优化重点调整的方向，系统会在保持原始简历评分不变的前提下重新生成新的优化结果。
+        </div>
+        <textarea
+          className="textarea"
+          rows={5}
+          placeholder="例如：希望强化数据分析表达、突出跨团队协作、让项目结果更贴合增长岗位。"
+          value={revisionNotes}
+          onChange={(event) => setRevisionNotes(event.target.value)}
+        />
+        <button
+          type="button"
+          className="button"
+          disabled={isRegenerating}
+          onClick={handleRegenerate}
+        >
+          {isRegenerating ? "正在重新生成..." : "根据建议重新生成"}
+        </button>
+        <div className="record-subtitle" style={{ marginTop: 12 }}>
+          原始简历评分：{resumeOptimization.beforeScores.overallScore}；当前优化后评分：{resumeOptimization.afterScores.overallScore}
         </div>
       </section>
 

@@ -135,12 +135,16 @@ export function buildResumeOptimizationPrompt(input: {
   }>;
   originalResume: string;
   notes: string;
+  revisionNotes?: string;
 }) {
   return `
 请完成第二阶段：基于岗位画像和原始诊断结果，生成优化后简历并给出优化后评分。
 
 候选人补充备注：
 ${input.notes || "无"}
+
+用户新增改写建议：
+${input.revisionNotes?.trim() ? input.revisionNotes.trim() : "无"}
 
 目标岗位画像：
 ${JSON.stringify(input.jobProfile, null, 2)}

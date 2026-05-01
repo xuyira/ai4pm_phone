@@ -16,8 +16,7 @@ export type RecordItem = {
 export const currentUser = {
   name: "徐怡然",
   studentId: "124032910110",
-  email: "124032910110@sjtu.edu.cn",
-  headline: "默认单用户模式，AI 结果自动保存到云端记录中"
+  email: "124032910110@sjtu.edu.cn"
 };
 
 export const features = [

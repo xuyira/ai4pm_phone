@@ -20,6 +20,7 @@ type OptimizeRequest = {
   jobType: "intern" | "fulltime";
   jobDescription: string;
   notes: string;
+  revisionNotes?: string;
   resumeText: string;
 };
 
@@ -96,7 +97,8 @@ export async function POST(request: Request) {
         rewritePriorities: baselineReview.rewritePriorities,
         keywordGapAnalysis: baselineReview.keywordGapAnalysis,
         originalResume: resumeText,
-        notes
+        notes,
+        revisionNotes: body.revisionNotes?.trim() ?? ""
       }),
       text: {
         format: zodTextFormat(resumeOptimizationOutputSchema, "resume_optimization_output")

@@ -19,9 +19,6 @@ export default function ProfilePage() {
 
       <section className="section">
         <h2 className="section-title">我的记录</h2>
-        <p className="page-subtitle" style={{ marginTop: 0 }}>
-          按功能查看每一次 AI 生成结果。当前默认单用户模式，所有记录都会自动保存到云端。
-        </p>
       </section>
 
       <ProfileRecordLinks />
