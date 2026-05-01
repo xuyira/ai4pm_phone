@@ -20,7 +20,9 @@ export default function HomePage() {
               feature.type === "delivery" || feature.type === "interview";
             const content = (
               <>
-                {isSoon ? <span className="corner-label">暂未上线</span> : null}
+                {isSoon ? (
+                  <span className="corner-label">{"\u3000\u3000暂未上线"}</span>
+                ) : null}
                 <div style={{ fontSize: 14, textAlign: "center", marginTop: 6 }}>
                   AI
                 </div>
