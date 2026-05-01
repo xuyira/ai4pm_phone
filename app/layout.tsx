@@ -20,14 +20,6 @@ export default function RootLayout({
         <PrototypeStoreProvider>
           <div className="app-shell">
             <div className="phone-frame">
-              <div className="status-bar">
-                <span>12:00</span>
-                <div className="status-icons" aria-hidden>
-                  <span className="dot" />
-                  <span className="dot" />
-                  <span className="battery" />
-                </div>
-              </div>
               <main className="page-body">{children}</main>
               <BottomNav />
             </div>

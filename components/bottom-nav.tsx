@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
-  { href: "/", label: "首页", icon: "⌂" },
-  { href: "/profile", label: "我的", icon: "◍" }
+  { href: "/", label: "首页" },
+  { href: "/profile", label: "我的" }
 ];
 
 export function BottomNav() {
@@ -23,7 +23,6 @@ export function BottomNav() {
             href={item.href}
             className={`bottom-link${isActive ? " is-active" : ""}`}
           >
-            <span aria-hidden>{item.icon}</span>
             <span>{item.label}</span>
           </Link>
         );
