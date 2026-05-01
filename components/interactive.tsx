@@ -16,6 +16,7 @@ export function FakeUploadCard({
 }) {
   const [selected, setSelected] = useState(false);
   const [currentName, setCurrentName] = useState(fileName);
+  const [isExtracting, setIsExtracting] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { push } = useToast();
 
@@ -51,7 +52,30 @@ export function FakeUploadCard({
           }
           setSelected(true);
           setCurrentName(file.name);
-          push("文件已选择：Word 将直接读取文本，PDF 将走 PyMuPDF4LLM 提取。");
+          setIsExtracting(true);
+
+          const formData = new FormData();
+          formData.append("file", file);
+
+          void fetch("/api/parse_resume", {
+            method: "POST",
+            body: formData
+          })
+            .then(async (response) => {
+              const payload = await response.json();
+              if (!response.ok) {
+                throw new Error(payload.detail ?? "解析失败");
+              }
+              push(
+                `简历提取完成：${payload.fileType.toUpperCase()} 已通过 ${payload.parser} 解析，共 ${payload.charCount} 字。`
+              );
+            })
+            .catch((error: Error) => {
+              push(`文件已选择，但解析服务暂不可用：${error.message}`);
+            })
+            .finally(() => {
+              setIsExtracting(false);
+            });
         }}
       />
       <div className="upload-icon">↥</div>
@@ -70,7 +94,9 @@ export function FakeUploadCard({
           style={{ marginTop: 8, textAlign: variant === "resume" ? "center" : "left" }}
         >
           {selected
-            ? "已完成选择，可继续填写目标岗位 JD。"
+            ? isExtracting
+              ? "正在提取简历文本，请稍候..."
+              : "已完成选择，可继续填写目标岗位 JD。"
             : "仅支持PDF/Word格式（不支持加密/扫描件），10MB以内"}
         </p>
       </div>
