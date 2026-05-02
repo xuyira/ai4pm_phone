@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FakeUploadCard, ResumeTypeSwitch } from "@/components/interactive";
+import { FakeUploadCard, ResumeTypeSwitch, ProjectMaterialsUploadCard } from "@/components/interactive";
 import { usePrototypeStore } from "@/components/prototype-store";
 import { useToast } from "@/components/toast";
 
@@ -21,13 +21,13 @@ export default function ResumeUploadPage() {
       return;
     }
 
-    router.push("/resume/loading");
+    router.push("/resume/diagnosis-loading");
   };
 
   return (
     <div>
       <section className="section">
-        <h1 className="resume-page-title">简历优化</h1>
+        <h1 className="resume-page-title">AI简历优化</h1>
       </section>
 
       <section className="section form-stack">
@@ -66,7 +66,7 @@ export default function ResumeUploadPage() {
             </div>
 
             <div>
-              <label className="field-label">岗位内容</label>
+              <label className="field-label">岗位内容<span className="required">*</span></label>
               <textarea
                 className="textarea"
                 placeholder="请粘贴目标岗位的职责描述和任职要求..."
@@ -87,8 +87,18 @@ export default function ResumeUploadPage() {
           </div>
         </div>
 
+        <div className="resume-block">
+          <div className="resume-block-head">
+            <span className="resume-block-index">3</span>
+            <h2 className="resume-block-title">补充项目资料（可选）</h2>
+          </div>
+          <div className="card">
+            <ProjectMaterialsUploadCard />
+          </div>
+        </div>
+
         <button type="button" className="button" onClick={handleStart}>
-          开始简历优化
+          开始AI简历诊断
         </button>
       </section>
     </div>

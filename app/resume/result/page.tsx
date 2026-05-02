@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ExportButton } from "@/components/interactive";
+import { ExportButton, ExpandableInfoBox } from "@/components/interactive";
 import { DimensionCard, ScoreRadar } from "@/components/resume-analytics";
 import { usePrototypeStore } from "@/components/prototype-store";
 import { useToast } from "@/components/toast";
-import { PageIntro, StepStrip } from "@/components/ui";
+import { StepStrip } from "@/components/ui";
 
 function formatJobType(jobType: "intern" | "fulltime") {
   return jobType === "intern" ? "校招/实习" : "社招";
@@ -19,6 +19,8 @@ export default function ResumeResultPage() {
   const { resumeDraft, resumeOptimization, setResumeOptimization } = usePrototypeStore();
   const [revisionNotes, setRevisionNotes] = useState("");
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [resumeExpanded, setResumeExpanded] = useState(false);
+  const [jobExpanded, setJobExpanded] = useState(false);
 
   useEffect(() => {
     if (!resumeOptimization) {
@@ -128,7 +130,8 @@ export default function ResumeResultPage() {
           jobDescription: resumeDraft.jobDescription,
           notes: resumeDraft.notes,
           revisionNotes: revisionNotes.trim(),
-          resumeText: resumeDraft.extractedResume?.content ?? ""
+          resumeText: resumeDraft.extractedResume?.content ?? "",
+          projectMaterialsText: resumeDraft.projectMaterials?.content || ""
         })
       });
 
@@ -148,12 +151,29 @@ export default function ResumeResultPage() {
 
   return (
     <div>
-      <PageIntro
-        eyebrow="简历优化"
-        title="优化结果已经准备好了"
-        subtitle={resumeOptimization.summary}
-      />
+      <section className="section">
+        <h1 className="section-title" style={{ textAlign: "center" }}>
+          AI简历优化结果
+        </h1>
+      </section>
       <StepStrip steps={["上传简历与 JD", "AI 处理中", "结果页"]} active={2} />
+
+      <section className="section form-stack">
+        <ExpandableInfoBox
+          title="上传的简历"
+          subtitle={resumeDraft.extractedResume?.filename || "已上传简历"}
+          content={resumeDraft.extractedResume?.content || ""}
+          isExpanded={resumeExpanded}
+          onToggle={setResumeExpanded}
+        />
+        <ExpandableInfoBox
+          title="目标岗位"
+          subtitle={resumeDraft.jobTitle || "目标岗位"}
+          content={`岗位标题：${resumeDraft.jobTitle}\n岗位类型：${resumeDraft.jobType === "intern" ? "校招/实习" : "社招"}\n\n岗位内容：\n${resumeDraft.jobDescription}\n${resumeDraft.notes ? `\n其他备注：\n${resumeDraft.notes}` : ""}`}
+          isExpanded={jobExpanded}
+          onToggle={setJobExpanded}
+        />
+      </section>
 
       <section className="section score-panel">
         <div className="score-card">
@@ -256,35 +276,48 @@ export default function ResumeResultPage() {
         </div>
 
         <div className="card form-stack">
-          <div className="record-title">原始简历诊断</div>
-          {resumeOptimization.baselineFindings.map((item, index) => (
-            <div key={`${item.dimension}-${index}`} className="soft-card">
+          <div className="record-title">3 项可直接修改建议</div>
+          {resumeOptimization.directEdits.map((item, index) => (
+            <div key={`${item.title}-${index}`} className="soft-card">
               <div className="summary-row">
-                <div className="record-title">{item.dimension}</div>
+                <div className="record-title">{item.title}</div>
+                <span className="pill">{item.targetSection}</span>
               </div>
               <div className="record-subtitle" style={{ marginTop: 10 }}>
-                问题：{item.issue}
+                原文：{item.currentText}
               </div>
               <div className="record-subtitle" style={{ marginTop: 8 }}>
-                证据：{item.evidence.join("；")}
+                建议改为：{item.suggestedText}
               </div>
               <div className="record-subtitle" style={{ marginTop: 8 }}>
-                建议：{item.recommendation}
+                提升维度：{item.improvesDimensions.join(" / ")}
+              </div>
+              <div className="record-subtitle" style={{ marginTop: 8 }}>
+                原因：{item.reason}
               </div>
             </div>
           ))}
         </div>
 
         <div className="card form-stack">
-          <div className="record-title">改写优先级</div>
-          {resumeOptimization.rewritePriorities.map((item, index) => (
-            <div key={`${item.targetSection}-${index}`} className="soft-card">
+          <div className="record-title">3 项需补充信息后可加强建议</div>
+          {resumeOptimization.needsUserInputEdits.map((item, index) => (
+            <div key={`${item.title}-${index}`} className="soft-card">
               <div className="summary-row">
-                <div className="record-title">{item.targetSection}</div>
-                <span className="pill">{item.priority.toUpperCase()}</span>
+                <div className="record-title">{item.title}</div>
+                <span className="pill">{item.targetSection}</span>
               </div>
               <div className="record-subtitle" style={{ marginTop: 10 }}>
-                指令：{item.instruction}
+                当前内容：{item.currentText}
+              </div>
+              <div className="record-subtitle" style={{ marginTop: 8 }}>
+                需要补充：{item.missingInfoQuestions.join("；")}
+              </div>
+              <div className="record-subtitle" style={{ marginTop: 8 }}>
+                补强方向：{item.suggestedDirection}
+              </div>
+              <div className="record-subtitle" style={{ marginTop: 8 }}>
+                提升维度：{item.improvesDimensions.join(" / ")}
               </div>
               <div className="record-subtitle" style={{ marginTop: 8 }}>
                 原因：{item.reason}

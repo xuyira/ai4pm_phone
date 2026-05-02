@@ -22,6 +22,7 @@ type OptimizeRequest = {
   notes: string;
   revisionNotes?: string;
   resumeText: string;
+  projectMaterialsText?: string;
 };
 
 function buildErrorMessage(error: unknown) {
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
     const jobDescription = body.jobDescription?.trim() ?? "";
     const notes = body.notes?.trim() ?? "";
     const resumeText = body.resumeText?.trim() ?? "";
+    const projectMaterialsText = body.projectMaterialsText?.trim() ?? "";
 
     if (!resumeText) {
       return NextResponse.json({ detail: "缺少简历文本。" }, { status: 400 });
@@ -68,14 +70,14 @@ export async function POST(request: Request) {
 
     const baselineResponse = await client.responses.parse({
       model: "gpt-4.1-nano",
-      reasoning: { effort: "low" },
       instructions: buildBaselineReviewInstructions(),
       input: buildBaselineReviewPrompt({
         jobTitle,
         jobType,
         jobDescription,
         originalResume: resumeText,
-        notes
+        notes,
+        projectMaterials: projectMaterialsText
       }),
       text: {
         format: zodTextFormat(resumeBaselineReviewSchema, "resume_baseline_review")
@@ -89,16 +91,16 @@ export async function POST(request: Request) {
 
     const optimizationResponse = await client.responses.parse({
       model: "gpt-4.1-nano",
-      reasoning: { effort: "medium" },
       instructions: buildResumeOptimizationInstructions(),
       input: buildResumeOptimizationPrompt({
         jobProfile: baselineReview.jobProfile,
-        baselineFindings: baselineReview.baselineFindings,
-        rewritePriorities: baselineReview.rewritePriorities,
+        directEdits: baselineReview.directEdits,
+        needsUserInputEdits: baselineReview.needsUserInputEdits,
         keywordGapAnalysis: baselineReview.keywordGapAnalysis,
         originalResume: resumeText,
         notes,
-        revisionNotes: body.revisionNotes?.trim() ?? ""
+        revisionNotes: body.revisionNotes?.trim() ?? "",
+        projectMaterials: projectMaterialsText
       }),
       text: {
         format: zodTextFormat(resumeOptimizationOutputSchema, "resume_optimization_output")
@@ -128,8 +130,8 @@ export async function POST(request: Request) {
           additionalSections: optimizationOutput.optimizedResume.additionalSections
         },
         jobKeywords: optimizationOutput.optimizedResume.highlightedKeywords,
-        baselineFindings: baselineReview.baselineFindings,
-        rewritePriorities: baselineReview.rewritePriorities,
+        directEdits: baselineReview.directEdits,
+        needsUserInputEdits: baselineReview.needsUserInputEdits,
         keywordGapAnalysis: baselineReview.keywordGapAnalysis,
         gapAnalysis: optimizationOutput.gapAnalysis,
         coverLetterTalkingPoints: optimizationOutput.coverLetterTalkingPoints,

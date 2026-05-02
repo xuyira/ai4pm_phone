@@ -7,6 +7,12 @@ const dimensionScoreSchema = z.object({
   improvement: z.string()
 });
 
+const diagnosisDimensionSchema = z.object({
+  score: z.number().min(0).max(10),
+  reason: z.string(),
+  improvement: z.string()
+});
+
 export const jobProfileSchema = z.object({
   targetTitle: z.string(),
   jobTypeLabel: z.enum(["校招/实习", "社招"]),
@@ -72,6 +78,41 @@ export const rewritePrioritySchema = z.object({
   reason: z.string()
 });
 
+export const directEditSchema = z.object({
+  title: z.string(),
+  targetSection: z.string(),
+  currentText: z.string(),
+  suggestedText: z.string(),
+  improvesDimensions: z.array(z.string()).min(1).max(3),
+  reason: z.string()
+});
+
+export const needsUserInputEditSchema = z.object({
+  title: z.string(),
+  targetSection: z.string(),
+  currentText: z.string(),
+  missingInfoQuestions: z.array(z.string()).min(1).max(4),
+  suggestedDirection: z.string(),
+  improvesDimensions: z.array(z.string()).min(1).max(3),
+  reason: z.string()
+});
+
+export const resumeDiagnosisSchema = z.object({
+  jobProfile: jobProfileSchema,
+  diagnosisScores: z.object({
+    structureClarity: diagnosisDimensionSchema,
+    informationCompleteness: diagnosisDimensionSchema,
+    resultQuantification: diagnosisDimensionSchema,
+    productExpression: diagnosisDimensionSchema,
+    responsibilityCoverage: diagnosisDimensionSchema,
+    atsKeywordMatch: diagnosisDimensionSchema,
+    hardRequirementFit: diagnosisDimensionSchema
+  }),
+  directEdits: z.array(directEditSchema).length(3),
+  needsUserInputEdits: z.array(needsUserInputEditSchema).length(3),
+  summary: z.string()
+});
+
 export const scoreSummarySchema = z.object({
   resumePresentation: z.object({
     structureClarity: dimensionScoreSchema,
@@ -94,8 +135,8 @@ export const scoreSummarySchema = z.object({
 export const resumeBaselineReviewSchema = z.object({
   jobProfile: jobProfileSchema,
   baselineScores: scoreSummarySchema,
-  baselineFindings: z.array(baselineFindingSchema).min(4).max(10),
-  rewritePriorities: z.array(rewritePrioritySchema).min(4).max(10),
+  directEdits: z.array(directEditSchema).length(3),
+  needsUserInputEdits: z.array(needsUserInputEditSchema).length(3),
   keywordGapAnalysis: z.array(keywordGapItemSchema).min(4).max(12),
   summary: z.string()
 });
@@ -120,3 +161,4 @@ export const resumeScoringSchema = z.object({
 export type JobProfile = z.infer<typeof jobProfileSchema>;
 export type OptimizedResume = z.infer<typeof optimizedResumeSchema>;
 export type ResumeScoring = z.infer<typeof resumeScoringSchema>;
+export type ResumeDiagnosis = z.infer<typeof resumeDiagnosisSchema>;

@@ -31,6 +31,7 @@ export type ResumeDraft = {
   jobDescription: string;
   notes: string;
   extractedResume: ResumeExtraction | null;
+  projectMaterials: ResumeExtraction | null;
 };
 
 export type ResumeDimensionScore = {
@@ -108,6 +109,62 @@ export type ResumeRewritePriority = {
   reason: string;
 };
 
+export type ResumeDirectEdit = {
+  title: string;
+  targetSection: string;
+  currentText: string;
+  suggestedText: string;
+  improvesDimensions: string[];
+  reason: string;
+};
+
+export type ResumeNeedsUserInputEdit = {
+  title: string;
+  targetSection: string;
+  currentText: string;
+  missingInfoQuestions: string[];
+  suggestedDirection: string;
+  improvesDimensions: string[];
+  reason: string;
+};
+
+export type ResumeDiagnosisDimension = {
+  score: number;
+  reason: string;
+  improvement: string;
+};
+
+export type ResumeDiagnosisScores = {
+  structureClarity: ResumeDiagnosisDimension;
+  informationCompleteness: ResumeDiagnosisDimension;
+  resultQuantification: ResumeDiagnosisDimension;
+  productExpression: ResumeDiagnosisDimension;
+  responsibilityCoverage: ResumeDiagnosisDimension;
+  atsKeywordMatch: ResumeDiagnosisDimension;
+  hardRequirementFit: ResumeDiagnosisDimension;
+};
+
+export type ResumeDiagnosisResult = {
+  jobProfile: {
+    targetTitle: string;
+    jobTypeLabel: "校招/实习" | "社招";
+    seniority: string;
+    coreResponsibilities: string[];
+    mustHaveRequirements: string[];
+    preferredRequirements: string[];
+    keywords: string[];
+    industrySignals: string[];
+    productCapabilities: string[];
+    atsTerms: string[];
+    hardRequirements: string[];
+    summary: string;
+  };
+  diagnosisScores: ResumeDiagnosisScores;
+  directEdits: ResumeDirectEdit[];
+  needsUserInputEdits: ResumeNeedsUserInputEdit[];
+  summary: string;
+};
+
 export type ResumeOptimizationResult = {
   jobProfile: {
     targetTitle: string;
@@ -127,8 +184,8 @@ export type ResumeOptimizationResult = {
   optimizedResumeMarkdown: string;
   optimizedResumeDoc: ResumeStructuredDocument;
   jobKeywords: string[];
-  baselineFindings: ResumeBaselineFinding[];
-  rewritePriorities: ResumeRewritePriority[];
+  directEdits: ResumeDirectEdit[];
+  needsUserInputEdits: ResumeNeedsUserInputEdit[];
   keywordGapAnalysis: ResumeKeywordGapItem[];
   gapAnalysis: ResumeGapAnalysis;
   coverLetterTalkingPoints: string[];
@@ -145,6 +202,9 @@ export type ResumeOptimizationStatus = "idle" | "running" | "completed" | "faile
 type PrototypeStoreValue = {
   records: RecordItem[];
   resumeDraft: ResumeDraft;
+  resumeDiagnosis: ResumeDiagnosisResult | null;
+  resumeDiagnosisStatus: ResumeOptimizationStatus;
+  resumeDiagnosisError: string | null;
   resumeOptimization: ResumeOptimizationResult | null;
   resumeOptimizationStatus: ResumeOptimizationStatus;
   resumeOptimizationError: string | null;
@@ -153,11 +213,15 @@ type PrototypeStoreValue = {
   getRecordsByType: (type: FeatureType) => RecordItem[];
   updateResumeDraft: (patch: Partial<ResumeDraft>) => void;
   setResumeExtraction: (extraction: ResumeExtraction) => void;
+  setProjectMaterials: (materials: ResumeExtraction) => void;
+  setResumeDiagnosis: (result: ResumeDiagnosisResult) => void;
+  setResumeDiagnosisStatus: (status: ResumeOptimizationStatus, error?: string | null) => void;
   setResumeOptimization: (result: ResumeOptimizationResult) => void;
   setResumeOptimizationStatus: (
     status: ResumeOptimizationStatus,
     error?: string | null
   ) => void;
+  clearResumeDiagnosis: () => void;
   clearResumeOptimization: () => void;
   clearResumeDraft: () => void;
 };
@@ -168,7 +232,8 @@ const defaultResumeDraft: ResumeDraft = {
   jobType: "intern",
   jobDescription: "",
   notes: "",
-  extractedResume: null
+  extractedResume: null,
+  projectMaterials: null
 };
 const PrototypeStore = createContext<PrototypeStoreValue | null>(null);
 
@@ -179,6 +244,10 @@ export function PrototypeStoreProvider({
 }) {
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [resumeDraft, setResumeDraft] = useState<ResumeDraft>(defaultResumeDraft);
+  const [resumeDiagnosis, setResumeDiagnosisState] = useState<ResumeDiagnosisResult | null>(null);
+  const [resumeDiagnosisStatus, setResumeDiagnosisStatusState] =
+    useState<ResumeOptimizationStatus>("idle");
+  const [resumeDiagnosisError, setResumeDiagnosisError] = useState<string | null>(null);
   const [resumeOptimization, setResumeOptimizationState] =
     useState<ResumeOptimizationResult | null>(null);
   const [resumeOptimizationStatus, setResumeOptimizationStatusState] =
@@ -206,6 +275,9 @@ export function PrototypeStoreProvider({
       ...current,
       ...patch
     }));
+    setResumeDiagnosisState(null);
+    setResumeDiagnosisStatusState("idle");
+    setResumeDiagnosisError(null);
     setResumeOptimizationState(null);
     setResumeOptimizationStatusState("idle");
     setResumeOptimizationError(null);
@@ -216,10 +288,43 @@ export function PrototypeStoreProvider({
       ...current,
       extractedResume: extraction
     }));
+    setResumeDiagnosisState(null);
+    setResumeDiagnosisStatusState("idle");
+    setResumeDiagnosisError(null);
     setResumeOptimizationState(null);
     setResumeOptimizationStatusState("idle");
     setResumeOptimizationError(null);
   }, []);
+
+  const setProjectMaterials = useCallback((materials: ResumeExtraction) => {
+    setResumeDraft((current) => ({
+      ...current,
+      projectMaterials: materials
+    }));
+    setResumeDiagnosisState(null);
+    setResumeDiagnosisStatusState("idle");
+    setResumeDiagnosisError(null);
+    setResumeOptimizationState(null);
+    setResumeOptimizationStatusState("idle");
+    setResumeOptimizationError(null);
+  }, []);
+
+  const setResumeDiagnosis = useCallback((result: ResumeDiagnosisResult) => {
+    setResumeDiagnosisState(result);
+    setResumeDiagnosisStatusState("completed");
+    setResumeDiagnosisError(null);
+  }, []);
+
+  const setResumeDiagnosisStatus = useCallback(
+    (status: ResumeOptimizationStatus, error?: string | null) => {
+      setResumeDiagnosisStatusState(status);
+      setResumeDiagnosisError(error ?? null);
+      if (status !== "completed") {
+        setResumeDiagnosisState(null);
+      }
+    },
+    []
+  );
 
   const setResumeOptimization = useCallback((result: ResumeOptimizationResult) => {
     setResumeOptimizationState(result);
@@ -244,10 +349,17 @@ export function PrototypeStoreProvider({
     setResumeOptimizationError(null);
   }, []);
 
+  const clearResumeDiagnosis = useCallback(() => {
+    setResumeDiagnosisState(null);
+    setResumeDiagnosisStatusState("idle");
+    setResumeDiagnosisError(null);
+  }, []);
+
   const clearResumeDraft = useCallback(() => {
     setResumeDraft(defaultResumeDraft);
+    clearResumeDiagnosis();
     clearResumeOptimization();
-  }, [clearResumeOptimization]);
+  }, [clearResumeDiagnosis, clearResumeOptimization]);
 
   useEffect(() => {
     if (!isHydrated) {
@@ -266,6 +378,9 @@ export function PrototypeStoreProvider({
     () => ({
       records: visibleRecords,
       resumeDraft,
+      resumeDiagnosis,
+      resumeDiagnosisStatus,
+      resumeDiagnosisError,
       resumeOptimization,
       resumeOptimizationStatus,
       resumeOptimizationError,
@@ -274,20 +389,31 @@ export function PrototypeStoreProvider({
       getRecordsByType: (type) => visibleRecords.filter((item) => item.type === type),
       updateResumeDraft,
       setResumeExtraction,
+      setProjectMaterials,
+      setResumeDiagnosis,
+      setResumeDiagnosisStatus,
       setResumeOptimization,
       setResumeOptimizationStatus,
+      clearResumeDiagnosis,
       clearResumeOptimization,
       clearResumeDraft
     }),
     [
+      clearResumeDiagnosis,
       clearResumeOptimization,
       clearResumeDraft,
       deleteRecord,
       resumeDraft,
+      resumeDiagnosis,
+      resumeDiagnosisError,
+      resumeDiagnosisStatus,
       resumeOptimization,
       resumeOptimizationError,
       resumeOptimizationStatus,
       setResumeExtraction,
+      setProjectMaterials,
+      setResumeDiagnosis,
+      setResumeDiagnosisStatus,
       setResumeOptimization,
       setResumeOptimizationStatus,
       updateResumeDraft,
