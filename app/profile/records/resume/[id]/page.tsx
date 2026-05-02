@@ -14,7 +14,7 @@ export default function ResumeRecordDetailPage() {
     return (
       <div className="empty-state section">
         <h1 className="section-title">记录已不存在</h1>
-        <p className="page-subtitle">它可能已经被删除。你可以返回“我的 &gt; 简历优化”继续查看其他结果。</p>
+        <p className="page-subtitle">它可能已经被删除。你可以返回“我的 &gt; AI简历优化”继续查看其他结果。</p>
         <Link href="/profile/records/resume" className="button-secondary">
           返回列表
         </Link>
@@ -25,7 +25,7 @@ export default function ResumeRecordDetailPage() {
   return (
     <div>
       <section className="section">
-        <div className="eyebrow">我的 &gt; 简历优化</div>
+        <div className="eyebrow">我的 &gt; AI简历优化</div>
         <h1 className="section-title" style={{ marginTop: 8 }}>
           {record.title}
         </h1>

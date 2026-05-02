@@ -142,12 +142,48 @@ export type ResumeDiagnosisDimension = {
 
 export type ResumeDiagnosisScores = {
   structureClarity: ResumeDiagnosisDimension;
-  resultQuantification: ResumeDiagnosisDimension;
-  productExpression: ResumeDiagnosisDimension;
   languageProfessionalism: ResumeDiagnosisDimension;
+  priorityFocus: ResumeDiagnosisDimension;
+  productExpression: ResumeDiagnosisDimension;
+  resultQuantification: ResumeDiagnosisDimension;
+  hardRequirementFit: ResumeDiagnosisDimension;
   responsibilityCoverage: ResumeDiagnosisDimension;
   industryRelevance: ResumeDiagnosisDimension;
-  hardRequirementFit: ResumeDiagnosisDimension;
+};
+
+export type ResumeOptimizationChangeItem = {
+  dimension: string;
+  targetSection: string;
+  originalText: string;
+  optimizedText: string;
+  changeType:
+    | "structure_adjustment"
+    | "priority_refocus"
+    | "product_logic_rewrite"
+    | "wording_polish"
+    | "jd_keyword_alignment"
+    | "evidence_based_enhancement"
+    | "unchanged";
+  sourceEvidence: string;
+  hasNewFact: boolean;
+  hasNewNumber: boolean;
+  safetyNote: string;
+};
+
+export type ResumeOptimizationUnsupportedAction = {
+  dimension: string;
+  suggestion: string;
+  reason: string;
+  neededUserInput: string;
+};
+
+export type ResumeOptimizationSelfCheck = {
+  hasFabricatedFact: boolean;
+  hasFabricatedNumber: boolean;
+  hasUnsupportedRequirementFilled: boolean;
+  hasSuggestionUsedAsEvidence: boolean;
+  hasOverstatedOwnership: boolean;
+  hasJdCopiedAsResumeContent: boolean;
 };
 
 export type ResumeProfileBasicInfo = {
@@ -230,6 +266,7 @@ export type ResumeDiagnosisResult = {
   resumeProfile: ResumeProfile;
   diagnosisScores: ResumeDiagnosisScores;
   summary: string;
+  rawModelOutput: string;
 };
 
 export type ResumeOptimizationResult = {
@@ -257,7 +294,13 @@ export type ResumeOptimizationResult = {
       finalScore: number;
       reason: string;
     };
-    resultQuantification: {
+    languageProfessionalism: {
+      originalScore: number;
+      delta: number;
+      finalScore: number;
+      reason: string;
+    };
+    priorityFocus: {
       originalScore: number;
       delta: number;
       finalScore: number;
@@ -269,7 +312,13 @@ export type ResumeOptimizationResult = {
       finalScore: number;
       reason: string;
     };
-    languageProfessionalism: {
+    resultQuantification: {
+      originalScore: number;
+      delta: number;
+      finalScore: number;
+      reason: string;
+    };
+    hardRequirementFit: {
       originalScore: number;
       delta: number;
       finalScore: number;
@@ -287,23 +336,11 @@ export type ResumeOptimizationResult = {
       finalScore: number;
       reason: string;
     };
-    hardRequirementFit: {
-      originalScore: number;
-      delta: number;
-      finalScore: number;
-      reason: string;
-    };
   };
-  strengths: string[];
-  gaps: Array<{
-    gap: string;
-    suggestion: string;
-  }>;
-  successPrediction: {
-    level: "成功率较高" | "成功率中等" | "成功率较低";
-    reason: string;
-    encouragement: string;
-  };
+  changeLog: ResumeOptimizationChangeItem[];
+  unsupportedActions: ResumeOptimizationUnsupportedAction[];
+  selfCheck: ResumeOptimizationSelfCheck;
+  rawModelOutput: string;
 };
 
 export type ResumeOptimizationStatus = "idle" | "running" | "completed" | "failed";

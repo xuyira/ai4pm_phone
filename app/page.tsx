@@ -9,7 +9,7 @@ export default function HomePage() {
           产品上岸 AI 助手
         </h1>
         <p className="page-subtitle" style={{ marginTop: 0 }}>
-          专为产品经理打造的 AI 求职助手，帮你深挖项目经历、定制优化简历、匹配高质量岗位、准备真实面试。
+          专为产品经理打造的 AI 求职助手，帮你定位更适合的方向、定制优化简历、匹配高质量岗位、准备真实面试。
         </p>
       </section>
 
@@ -17,15 +17,12 @@ export default function HomePage() {
         <div className="home-feature-grid">
           {features.map((feature) => {
             const hasComingSoonLabel =
-              feature.type === "experience" || feature.type === "delivery" || feature.type === "interview";
+              feature.type === "positioning" || feature.type === "delivery" || feature.type === "interview";
             const isDisabled =
-              feature.type === "delivery" || feature.type === "interview";
+              feature.type === "positioning" || feature.type === "delivery" || feature.type === "interview";
             const content = (
               <>
                 {hasComingSoonLabel ? <span className="corner-label">{"\u3000暂未上线"}</span> : null}
-                <div style={{ fontSize: 14, textAlign: "center", marginTop: 6 }}>
-                  AI
-                </div>
                 <div className="home-feature-title" style={{ textAlign: "center" }}>
                   {feature.title}
                 </div>
@@ -57,8 +54,8 @@ export default function HomePage() {
         <h2 className="info-block-title">功能介绍</h2>
         <div>
           <p className="info-item-copy">
-            <span className="info-item-title">1. AI经历深挖：</span>
-            上传简历，AI会从产品经理8维能力模型出发，帮你在聊天中挖掘那些你本来就有，只是还没有写出来的产品能力与经历亮点。
+            <span className="info-item-title">1. AI求职定位：</span>
+            上传简历后，AI 会结合你的经历背景、能力特征与不同产品经理方向的要求，推荐更适合你的求职方向与发力重点。
           </p>
 
           <p className="info-item-copy">

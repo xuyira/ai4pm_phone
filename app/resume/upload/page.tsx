@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FakeUploadCard, ResumeTypeSwitch, ProjectMaterialsUploadCard } from "@/components/interactive";
+import { FakeUploadCard, ResumeTypeSwitch } from "@/components/interactive";
 import { usePrototypeStore } from "@/components/prototype-store";
 import { useToast } from "@/components/toast";
 import { StepStrip } from "@/components/ui";
@@ -86,16 +86,6 @@ export default function ResumeUploadPage() {
                 onChange={(event) => updateResumeDraft({ notes: event.target.value })}
               />
             </div>
-          </div>
-        </div>
-
-        <div className="resume-block">
-          <div className="resume-block-head">
-            <span className="resume-block-index">3</span>
-            <h2 className="resume-block-title">补充项目资料（可选）</h2>
-          </div>
-          <div className="card">
-            <ProjectMaterialsUploadCard />
           </div>
         </div>
 

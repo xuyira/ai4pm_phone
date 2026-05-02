@@ -5,7 +5,7 @@ export default function ExperienceLoadingQuestionsPage() {
   return (
     <div>
       <PageIntro
-        eyebrow="经历深挖"
+        eyebrow="AI经历深挖"
         title="AI 正在生成深挖问题"
         subtitle="这一步会先拆解你的项目经历，提炼适合继续追问的场景、指标和推动动作。"
       />
@@ -15,14 +15,14 @@ export default function ExperienceLoadingQuestionsPage() {
       />
       <StatusPage
         title="预计 1-2 分钟"
-        copy="你可以继续停留在这里，也可以稍后回来。问题生成完成后，会保存在“我的 > 经历深挖”中。"
-        hint="等待页会明确告诉用户去哪里查看：本次结果会先进入“我的 > 经历深挖”，状态为“待补充”。"
+        copy="你可以继续停留在这里，也可以稍后回来。问题生成完成后，会保存在“我的 > AI经历深挖”中。"
+        hint="等待页会明确告诉用户去哪里查看：本次结果会先进入“我的 > AI经历深挖”，状态为“待补充”。"
         ctaLabel="查看问题补充页示例"
         ctaHref="/experience/questions"
       />
       <div className="section">
         <Link href="/profile/records/experience" className="button-ghost">
-          先去我的 &gt; 经历深挖
+          先去我的 &gt; AI经历深挖
         </Link>
       </div>
     </div>

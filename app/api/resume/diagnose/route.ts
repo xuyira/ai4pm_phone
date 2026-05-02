@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
     const client = getOpenAIClient();
     const diagnosisResponse = await client.responses.parse({
-      model: "gpt-4.1-nano",
+      model: "gpt-5.4-nano",
       instructions: buildResumeDiagnosisInstructions(),
       input: buildResumeDiagnosisPrompt({
         jobTitle,
@@ -81,7 +81,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      result: diagnosis
+      result: {
+        ...diagnosis,
+        rawModelOutput: diagnosisResponse.output_text || JSON.stringify(diagnosis, null, 2)
+      }
     });
   } catch (error) {
     return NextResponse.json({ detail: buildErrorMessage(error) }, { status: 500 });

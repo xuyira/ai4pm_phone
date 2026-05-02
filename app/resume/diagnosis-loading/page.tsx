@@ -121,7 +121,7 @@ export default function ResumeDiagnosisLoadingPage() {
           </p>
         </div>
         <p className="page-subtitle" style={{ marginTop: 12, marginBottom: 0 }}>
-          您可放心退出，稍后在结果页继续查看
+          您可放心退出，稍后在"我的记录-AI简历优化"中查看
         </p>
         {resumeDiagnosisStatus === "failed" ? (
           <div className="form-stack" style={{ width: "100%" }}>

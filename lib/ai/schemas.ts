@@ -115,20 +115,45 @@ export const optimizedResumeSchema = z.object({
 
 const optimizedDiagnosisDimensionSchema = z.object({
   originalScore: z.number().min(0).max(10),
-  delta: z.number().min(0).max(5),
+  delta: z.number().min(0).max(3),
   finalScore: z.number().min(0).max(10),
   reason: z.string()
 });
 
-const optimizationGapItemSchema = z.object({
-  gap: z.string(),
-  suggestion: z.string()
+const optimizationChangeItemSchema = z.object({
+  dimension: z.string(),
+  targetSection: z.string(),
+  originalText: z.string(),
+  optimizedText: z.string(),
+  changeType: z.enum([
+    "structure_adjustment",
+    "priority_refocus",
+    "product_logic_rewrite",
+    "wording_polish",
+    "jd_keyword_alignment",
+    "evidence_based_enhancement",
+    "unchanged"
+  ]),
+  sourceEvidence: z.string(),
+  hasNewFact: z.boolean(),
+  hasNewNumber: z.boolean(),
+  safetyNote: z.string()
 });
 
-const successPredictionSchema = z.object({
-  level: z.enum(["成功率较高", "成功率中等", "成功率较低"]),
+const unsupportedActionSchema = z.object({
+  dimension: z.string(),
+  suggestion: z.string(),
   reason: z.string(),
-  encouragement: z.string()
+  neededUserInput: z.string()
+});
+
+const optimizationSelfCheckSchema = z.object({
+  hasFabricatedFact: z.boolean(),
+  hasFabricatedNumber: z.boolean(),
+  hasUnsupportedRequirementFilled: z.boolean(),
+  hasSuggestionUsedAsEvidence: z.boolean(),
+  hasOverstatedOwnership: z.boolean(),
+  hasJdCopiedAsResumeContent: z.boolean()
 });
 
 export const keywordGapItemSchema = z.object({
@@ -182,14 +207,15 @@ export const resumeDiagnosisSchema = z.object({
   resumeProfile: resumeProfileSchema,
   diagnosisScores: z.object({
     structureClarity: diagnosisDimensionSchema,
-    resultQuantification: diagnosisDimensionSchema,
-    productExpression: diagnosisDimensionSchema,
     languageProfessionalism: diagnosisDimensionSchema,
+    priorityFocus: diagnosisDimensionSchema,
+    productExpression: diagnosisDimensionSchema,
+    resultQuantification: diagnosisDimensionSchema,
+    hardRequirementFit: diagnosisDimensionSchema,
     responsibilityCoverage: diagnosisDimensionSchema,
-    industryRelevance: diagnosisDimensionSchema,
-    hardRequirementFit: diagnosisDimensionSchema
+    industryRelevance: diagnosisDimensionSchema
   }),
-  summary: z.string()
+  summary: z.string().optional().default("")
 });
 
 export const scoreSummarySchema = z.object({
@@ -222,18 +248,19 @@ export const resumeBaselineReviewSchema = z.object({
 
 export const resumeOptimizationOutputSchema = z.object({
   optimizedResumeProfile: resumeProfileSchema,
+  changeLog: z.array(optimizationChangeItemSchema),
+  unsupportedActions: z.array(unsupportedActionSchema),
   optimizedDiagnosisScores: z.object({
     structureClarity: optimizedDiagnosisDimensionSchema,
-    resultQuantification: optimizedDiagnosisDimensionSchema,
-    productExpression: optimizedDiagnosisDimensionSchema,
     languageProfessionalism: optimizedDiagnosisDimensionSchema,
+    priorityFocus: optimizedDiagnosisDimensionSchema,
+    productExpression: optimizedDiagnosisDimensionSchema,
+    resultQuantification: optimizedDiagnosisDimensionSchema,
+    hardRequirementFit: optimizedDiagnosisDimensionSchema,
     responsibilityCoverage: optimizedDiagnosisDimensionSchema,
-    industryRelevance: optimizedDiagnosisDimensionSchema,
-    hardRequirementFit: optimizedDiagnosisDimensionSchema
+    industryRelevance: optimizedDiagnosisDimensionSchema
   }),
-  strengths: z.array(z.string()).length(3),
-  gaps: z.array(optimizationGapItemSchema).length(3),
-  successPrediction: successPredictionSchema
+  selfCheck: optimizationSelfCheckSchema
 });
 
 export const resumeScoringSchema = z.object({

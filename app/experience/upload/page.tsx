@@ -6,7 +6,7 @@ export default function ExperienceUploadPage() {
   return (
     <div>
       <PageIntro
-        eyebrow="经历深挖"
+        eyebrow="AI经历深挖"
         title="先上传简历，AI 会帮你生成深挖问题"
         subtitle="第一轮 AI 会先识别你的项目经历，并从产品经理关键能力视角生成 3-5 个追问。"
       />
@@ -20,7 +20,7 @@ export default function ExperienceUploadPage() {
         <FakeUploadCard />
         <RecordSummaryLinks />
         <Link href="/experience/loading-questions" className="button">
-          开始经历深挖
+          开始AI经历深挖
         </Link>
       </section>
     </div>

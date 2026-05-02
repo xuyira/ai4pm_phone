@@ -11,9 +11,9 @@ export default function ExperienceResultPage() {
   return (
     <div>
       <PageIntro
-        eyebrow="经历深挖"
+        eyebrow="AI经历深挖"
         title="你的结构化经历库已经生成"
-        subtitle="这份内容已经默认保存到“我的 > 经历深挖”。你可以继续复制、导出或回头再补充细节。"
+        subtitle="这份内容已经默认保存到“我的 > AI经历深挖”。你可以继续复制、导出或回头再补充细节。"
       />
       <StepStrip
         steps={["上传简历", "生成追问", "问题补充", "生成经历库", "结果"]}

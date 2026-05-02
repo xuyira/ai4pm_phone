@@ -1,24 +1,28 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CompareScoreRadar } from "@/components/resume-analytics";
 import { usePrototypeStore } from "@/components/prototype-store";
+import { ExpandableInfoBox } from "@/components/interactive";
 import { StepStrip } from "@/components/ui";
 
 const dimensionMeta = [
   { key: "structureClarity", label: "结构清晰度" },
-  { key: "resultQuantification", label: "结果量化度" },
-  { key: "productExpression", label: "产品表达度" },
   { key: "languageProfessionalism", label: "语言专业度" },
+  { key: "priorityFocus", label: "重点突出度" },
+  { key: "productExpression", label: "产品逻辑度" },
+  { key: "resultQuantification", label: "指标量化度" },
+  { key: "hardRequirementFit", label: "门槛达成度" },
   { key: "responsibilityCoverage", label: "职责覆盖度" },
-  { key: "industryRelevance", label: "行业相关度" },
-  { key: "hardRequirementFit", label: "门槛达成度" }
+  { key: "industryRelevance", label: "行业相关度" }
 ] as const;
 
 export default function ResumeResultPage() {
   const router = useRouter();
   const { resumeOptimization } = usePrototypeStore();
+  const [detailsExpanded, setDetailsExpanded] = useState(true);
+  const [debugExpanded, setDebugExpanded] = useState(false);
 
   useEffect(() => {
     if (!resumeOptimization) {
@@ -59,27 +63,79 @@ export default function ResumeResultPage() {
       lines.push(profile.basicInfo.name);
     }
 
-    [profile.basicInfo.phone, profile.basicInfo.email].filter(Boolean).forEach((item) => {
-      lines.push(item);
-    });
+    [profile.basicInfo.gender, profile.basicInfo.phone, profile.basicInfo.email]
+      .filter(Boolean)
+      .forEach((item) => {
+        lines.push(item);
+      });
 
+    if (
+      profile.jobIntent.targetCity ||
+      profile.jobIntent.earliestStartDate ||
+      profile.jobIntent.internshipDuration ||
+      profile.jobIntent.weeklyAvailability
+    ) {
+      lines.push("求职意向");
+      if (profile.jobIntent.targetCity) {
+        lines.push(`目标城市：${profile.jobIntent.targetCity}`);
+      }
+      if (profile.jobIntent.earliestStartDate) {
+        lines.push(`最早到岗：${profile.jobIntent.earliestStartDate}`);
+      }
+      if (profile.jobIntent.internshipDuration) {
+        lines.push(`实习时长：${profile.jobIntent.internshipDuration}`);
+      }
+      if (profile.jobIntent.weeklyAvailability) {
+        lines.push(`每周出勤：${profile.jobIntent.weeklyAvailability}`);
+      }
+    }
+
+    if (profile.education.length) {
+      lines.push("教育经历");
+    }
     profile.education.forEach((item) => {
       lines.push(`${item.school}｜${item.degree}｜${item.major}`);
       lines.push(`${item.startDate} - ${item.endDate}`);
+      if (item.department) {
+        lines.push(`院系：${item.department}`);
+      }
+      if (item.gpa) {
+        lines.push(`GPA：${item.gpa}`);
+      }
     });
 
+    if (profile.workExperience.length) {
+      lines.push("工作经历");
+    }
     profile.workExperience.forEach((item) => {
       lines.push(`${item.company}｜${item.title}`);
       lines.push(`${item.startDate} - ${item.endDate}`);
       lines.push(item.description);
     });
 
+    if (profile.projectExperience.length) {
+      lines.push("项目经历");
+    }
     profile.projectExperience.forEach((item) => {
       lines.push(`${item.projectName}｜${item.role}`);
       lines.push(`${item.startDate} - ${item.endDate}`);
       lines.push(item.description);
     });
 
+    if (profile.awards.length) {
+      lines.push("获奖信息");
+    }
+    profile.awards.forEach((item) => {
+      lines.push(`${item.awardType}｜${item.awardName}｜${item.awardDate}`);
+    });
+
+    if (
+      profile.skills.languageTests.length ||
+      profile.skills.programmingLanguages.length ||
+      profile.skills.aiSkills.length
+    ) {
+      lines.push("技能信息");
+    }
     if (profile.skills.languageTests.length) {
       lines.push(`语言：${profile.skills.languageTests.join(" / ")}`);
     }
@@ -108,12 +164,42 @@ export default function ResumeResultPage() {
             <div className="muted">简历总分（满分10分）</div>
             <div className="score-big">{totalScore}</div>
             <div className="record-subtitle">
-              优化后7维平均分，较优化前提升
+              优化后8维平均分，较优化前提升
               {totalDelta > 0 ? "+" : ""}
               {totalDelta}分
             </div>
           </div>
           <CompareScoreRadar beforeItems={beforeRadar} afterItems={afterRadar} hideTitle />
+        </div>
+      </section>
+
+      <section className="section form-stack">
+        <div className="card form-stack">
+          <button
+            type="button"
+            className="diagnosis-card-toggle"
+            onClick={() => setDetailsExpanded((current) => !current)}
+          >
+            <span className="record-title">8维提升明细</span>
+            <span className={`diagnosis-toggle-icon${detailsExpanded ? " is-open" : ""}`}>▾</span>
+          </button>
+          {detailsExpanded
+            ? dimensionMeta.map((item) => {
+                const detail = resumeOptimization.afterScores[item.key];
+                return (
+                  <div key={item.key} className="soft-card">
+                    <div className="record-title">{item.label}</div>
+                    <div className="record-subtitle" style={{ marginTop: 8 }}>
+                      原分 {detail.originalScore} / 提升 {detail.delta > 0 ? "+" : ""}
+                      {detail.delta} / 当前 {detail.finalScore}
+                    </div>
+                    <div className="record-subtitle" style={{ marginTop: 10 }}>
+                      {detail.reason}
+                    </div>
+                  </div>
+                );
+              })
+            : null}
         </div>
       </section>
 
@@ -129,41 +215,13 @@ export default function ResumeResultPage() {
       </section>
 
       <section className="section form-stack">
-        <div className="card">
-          <div className="record-title">优势项</div>
-          <div className="form-stack" style={{ marginTop: 12 }}>
-            {resumeOptimization.strengths.map((item) => (
-              <div key={item} className="soft-card">
-                <div className="record-title">{item}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="card form-stack">
-          <div className="record-title">差距项</div>
-          {resumeOptimization.gaps.map((item, index) => (
-            <div key={`${item.gap}-${index}`} className="soft-card">
-              <div className="record-title">{item.gap}</div>
-              <div className="record-subtitle" style={{ marginTop: 8 }}>
-                建议：{item.suggestion}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="card form-stack">
-          <div className="record-title">成功率预测</div>
-          <div className="soft-card">
-            <div className="record-title">{resumeOptimization.successPrediction.level}</div>
-            <div className="record-subtitle" style={{ marginTop: 8 }}>
-              {resumeOptimization.successPrediction.reason}
-            </div>
-            <div className="record-subtitle" style={{ marginTop: 8 }}>
-              {resumeOptimization.successPrediction.encouragement}
-            </div>
-          </div>
-        </div>
+        <ExpandableInfoBox
+          title="调试查看：优化模型完整输出"
+          subtitle="用于核对大模型返回的全部结构化结果"
+          content={resumeOptimization.rawModelOutput}
+          isExpanded={debugExpanded}
+          onToggle={setDebugExpanded}
+        />
       </section>
     </div>
   );

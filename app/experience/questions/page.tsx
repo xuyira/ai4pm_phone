@@ -9,9 +9,9 @@ export default function ExperienceQuestionsPage() {
   return (
     <div>
       <PageIntro
-        eyebrow="经历深挖"
+        eyebrow="AI经历深挖"
         title="补充回答后，AI 才能生成更能打的项目表达"
-        subtitle="左侧切换不同经历，右侧补充 AI 追问。你也可以手动补充细节，结果会自动保存到“我的 > 经历深挖”。"
+        subtitle="左侧切换不同经历，右侧补充 AI 追问。你也可以手动补充细节，结果会自动保存到“我的 > AI经历深挖”。"
       />
       <StepStrip
         steps={["上传简历", "生成追问", "问题补充", "生成经历库", "结果"]}
@@ -37,7 +37,7 @@ export default function ExperienceQuestionsPage() {
 
           <div className="form-stack">
             <div className="hint-banner">
-              当前记录处于“待补充”状态。你也可以稍后在“我的 &gt; 经历深挖”继续回来写。
+              当前记录处于“待补充”状态。你也可以稍后在“我的 &gt; AI经历深挖”继续回来写。
             </div>
             {experienceQuestions.map((question, index) => (
               <div key={question} className="question-block">

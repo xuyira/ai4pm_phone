@@ -14,7 +14,6 @@ export default function ProfilePage() {
             <div style={{ opacity: 0.88 }}>{currentUser.email}</div>
           </div>
         </div>
-        <p style={{ margin: "16px 0 0", lineHeight: 1.7 }}>{currentUser.headline}</p>
       </section>
 
       <section className="section">

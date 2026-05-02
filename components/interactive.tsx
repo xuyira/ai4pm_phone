@@ -414,20 +414,40 @@ export function ExportButton({
 export function ProfileRecordLinks() {
   const { getRecordsByType } = usePrototypeStore();
 
-  const items: FeatureType[] = ["experience", "resume", "delivery", "interview"];
+  const items: FeatureType[] = ["resume", "positioning", "delivery", "interview"];
 
   return (
     <div className="record-grid-card section">
       {items.map((type) => {
         const records = getRecordsByType(type);
         const toneClass =
-          type === "experience"
-            ? "warm-yellow"
-            : type === "resume"
-              ? "warm-lime"
+          type === "resume"
+            ? "warm-lime"
+            : type === "positioning"
+              ? "warm-yellow"
               : type === "delivery"
                 ? "warm-blue"
                 : "warm-purple";
+
+        const isClickable = type === "resume";
+
+        if (!isClickable) {
+          return (
+            <div
+              key={type}
+              className="record-grid-item"
+              aria-disabled="true"
+              style={{ opacity: 0.65, cursor: "not-allowed" }}
+            >
+              <div className={`record-square ${toneClass}`} />
+              <div className="record-meta">
+                <span className="record-title">{getFeatureLabel(type)}</span>
+                <span className="record-subtitle">敬请期待</span>
+              </div>
+              <span className="button-ghost">暂未开放</span>
+            </div>
+          );
+        }
 
         return (
           <Link
@@ -438,11 +458,7 @@ export function ProfileRecordLinks() {
             <div className={`record-square ${toneClass}`} />
             <div className="record-meta">
               <span className="record-title">{getFeatureLabel(type)}</span>
-              <span className="record-subtitle">
-                {type === "delivery" || type === "interview"
-                  ? "敬请期待"
-                  : `共 ${records.length} 条记录`}
-              </span>
+              <span className="record-subtitle">{`共 ${records.length} 条记录`}</span>
             </div>
             <span className="button-ghost">查看</span>
           </Link>

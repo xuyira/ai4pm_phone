@@ -5,7 +5,7 @@ export default function ExperienceLoadingResultPage() {
   return (
     <div>
       <PageIntro
-        eyebrow="经历深挖"
+        eyebrow="AI经历深挖"
         title="AI 正在生成结构化经历库"
         subtitle="这一步会综合你的简历、补充回答与能力线索，沉淀成可复用的项目表达素材。"
       />
@@ -15,14 +15,14 @@ export default function ExperienceLoadingResultPage() {
       />
       <StatusPage
         title="预计 1 分钟左右"
-        copy="生成完成后，你可以在结果页查看，也可以稍后前往“我的 > 经历深挖 > 已完成记录”继续浏览。"
-        hint="等待页需说清楚去哪看：最终经历库会保存到“我的 > 经历深挖”，状态为“已完成”。"
+        copy="生成完成后，你可以在结果页查看，也可以稍后前往“我的 > AI经历深挖 > 已完成记录”继续浏览。"
+        hint="等待页需说清楚去哪看：最终经历库会保存到“我的 > AI经历深挖”，状态为“已完成”。"
         ctaLabel="查看最终结果页"
         ctaHref="/experience/result"
       />
       <div className="section">
         <Link href="/profile/records/experience" className="button-ghost">
-          去我的 &gt; 经历深挖 查看记录
+          去我的 &gt; AI经历深挖 查看记录
         </Link>
       </div>
     </div>

@@ -1,4 +1,4 @@
-export type FeatureType = "experience" | "resume" | "delivery" | "interview";
+export type FeatureType = "experience" | "resume" | "positioning" | "delivery" | "interview";
 export type ExperienceStatus = "pending_questions" | "completed";
 export type ResumeStatus = "completed";
 
@@ -17,22 +17,22 @@ export const currentUser = {
   name: "徐怡然",
   studentId: "124032910110",
   email: "124032910110@sjtu.edu.cn",
-  headline: "默认单用户模式，AI 结果会在当前设备会话内保留，便于继续查看与导出。"
+  headline: ""
 };
 
 export const features = [
   {
-    type: "experience" as const,
-    title: "经历深挖",
-    desc: "上传简历后，AI 会先生成追问，再结合你的补充沉淀成结构化经历库。",
-    href: "/experience/upload",
+    type: "positioning" as const,
+    title: "AI求职定位",
+    desc: "敬请期待：上传简历后，AI 会结合你的背景与不同产品经理方向要求，推荐更适合你的求职方向。",
+    href: "/profile/records/positioning",
     tone: "warm-yellow",
     icon: "✦",
-    tag: "已开放"
+    tag: "敬请期待"
   },
   {
     type: "resume" as const,
-    title: "简历优化",
+    title: "AI简历优化",
     desc: "上传简历和岗位 JD，生成优化结果，并展示简历表现与岗位匹配评分。",
     href: "/resume/upload",
     tone: "warm-lime",
@@ -41,7 +41,7 @@ export const features = [
   },
   {
     type: "delivery" as const,
-    title: "岗位投递",
+    title: "AI岗位投递",
     desc: "敬请期待：自动整理高匹配岗位，辅助生成投递话术与海投计划。",
     href: "/profile/records/delivery",
     tone: "warm-blue",
@@ -50,7 +50,7 @@ export const features = [
   },
   {
     type: "interview" as const,
-    title: "模拟面试",
+    title: "AI模拟面试",
     desc: "敬请期待：围绕目标岗位生成模拟面试题，并提供答题复盘建议。",
     href: "/profile/records/interview",
     tone: "warm-purple",
@@ -129,12 +129,14 @@ export const experienceQuestions = [
 export function getFeatureLabel(type: FeatureType) {
   switch (type) {
     case "experience":
-      return "经历深挖";
+      return "AI经历深挖";
     case "resume":
-      return "简历优化";
+      return "AI简历优化";
+    case "positioning":
+      return "AI求职定位";
     case "delivery":
-      return "岗位投递";
+      return "AI岗位投递";
     case "interview":
-      return "模拟面试";
+      return "AI模拟面试";
   }
 }

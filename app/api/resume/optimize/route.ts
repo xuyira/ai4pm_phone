@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     const client = getOpenAIClient();
 
     const optimizationResponse = await client.responses.parse({
-      model: "gpt-4.1-nano",
+      model: "gpt-5.4-nano",
       instructions: buildResumeOptimizationInstructions(),
       input: buildResumeOptimizationPrompt({
         jobProfile,
@@ -93,9 +93,11 @@ export async function POST(request: Request) {
         optimizedResumeText: JSON.stringify(optimizationOutput.optimizedResumeProfile, null, 2),
         beforeScores: diagnosisScores,
         afterScores: optimizationOutput.optimizedDiagnosisScores,
-        strengths: optimizationOutput.strengths,
-        gaps: optimizationOutput.gaps,
-        successPrediction: optimizationOutput.successPrediction
+        changeLog: optimizationOutput.changeLog,
+        unsupportedActions: optimizationOutput.unsupportedActions,
+        selfCheck: optimizationOutput.selfCheck,
+        rawModelOutput:
+          optimizationResponse.output_text || JSON.stringify(optimizationOutput, null, 2)
       }
     });
   } catch (error) {

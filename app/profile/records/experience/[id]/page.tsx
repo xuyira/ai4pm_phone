@@ -14,7 +14,7 @@ export default function ExperienceRecordDetailPage() {
     return (
       <div className="empty-state section">
         <h1 className="section-title">记录已不存在</h1>
-        <p className="page-subtitle">它可能已经被删除。你可以返回“我的 &gt; 经历深挖”继续查看其他记录。</p>
+        <p className="page-subtitle">它可能已经被删除。你可以返回“我的 &gt; AI经历深挖”继续查看其他记录。</p>
         <Link href="/profile/records/experience" className="button-secondary">
           返回列表
         </Link>
@@ -27,7 +27,7 @@ export default function ExperienceRecordDetailPage() {
   return (
     <div>
       <section className="section">
-        <div className="eyebrow">我的 &gt; 经历深挖</div>
+        <div className="eyebrow">我的 &gt; AI经历深挖</div>
         <h1 className="section-title" style={{ marginTop: 8 }}>
           {record.title}
         </h1>

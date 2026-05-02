@@ -6,12 +6,16 @@ import { usePrototypeStore } from "@/components/prototype-store";
 import { getFeatureLabel, type FeatureType } from "@/lib/prototype-data";
 
 function getEmptyText(type: FeatureType) {
+  if (type === "positioning") {
+    return "AI求职定位功能尚未开放，这里后续会保存方向推荐结果与定位建议。";
+  }
+
   if (type === "delivery") {
-    return "岗位投递功能尚未开放，这里后续会按投递批次和岗位标题保存记录。";
+    return "AI岗位投递功能尚未开放，这里后续会按投递批次和岗位标题保存记录。";
   }
 
   if (type === "interview") {
-    return "模拟面试功能尚未开放，这里后续会保存题目集、回答记录和复盘结果。";
+    return "AI模拟面试功能尚未开放，这里后续会保存题目集、回答记录和复盘结果。";
   }
 
   return "暂时还没有记录。";
