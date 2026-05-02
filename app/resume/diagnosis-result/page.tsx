@@ -21,7 +21,7 @@ type DimensionKey = (typeof dimensionMeta)[number]["key"];
 
 export default function ResumeDiagnosisResultPage() {
   const router = useRouter();
-  const { resumeDraft, resumeDiagnosis } = usePrototypeStore();
+  const { resumeDraft, resumeDiagnosis, setResumeDiagnosisActions } = usePrototypeStore();
   const [resumeExpanded, setResumeExpanded] = useState(false);
   const [jobExpanded, setJobExpanded] = useState(false);
   const [openCards, setOpenCards] = useState<Record<string, boolean>>({});
@@ -50,6 +50,17 @@ export default function ResumeDiagnosisResultPage() {
       ...current,
       [key]: !current[key]
     }));
+  };
+
+  const handleStartOptimization = () => {
+    setResumeDiagnosisActions(
+      dimensionMeta.map((item) => ({
+        dimension: item.key,
+        adopted: adoptionState[item.key] === "yes",
+        userComment: userComments[item.key] || ""
+      }))
+    );
+    router.push("/resume/loading");
   };
 
   return (
@@ -161,7 +172,7 @@ export default function ResumeDiagnosisResultPage() {
       </section>
 
       <section className="section">
-        <button type="button" className="button" onClick={() => router.push("/resume/result")}>
+        <button type="button" className="button" onClick={handleStartOptimization}>
           开始简历优化
         </button>
       </section>

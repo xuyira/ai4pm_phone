@@ -3,7 +3,7 @@ import OpenAI from "openai";
 let client: OpenAI | null = null;
 
 export function getOpenAIClient() {
-  // 支持 AiHubMix 配置
+  // 支持通过 AiHubMix 兼容 OpenAI SDK 接口
   const useAiHubMix = process.env.AIHUBMIX_API_KEY && process.env.USE_AIHUBMIX === "true";
 
   if (useAiHubMix) {

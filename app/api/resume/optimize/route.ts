@@ -2,27 +2,29 @@ import { NextResponse } from "next/server";
 import { zodTextFormat } from "openai/helpers/zod";
 import { getOpenAIClient } from "@/lib/ai/openai";
 import {
-  buildBaselineReviewInstructions,
-  buildBaselineReviewPrompt,
   buildResumeOptimizationInstructions,
   buildResumeOptimizationPrompt
 } from "@/lib/ai/prompts";
 import {
-  resumeBaselineReviewSchema,
-  resumeOptimizationOutputSchema
+  jobProfileSchema,
+  resumeDiagnosisSchema,
+  resumeOptimizationOutputSchema,
+  resumeProfileSchema
 } from "@/lib/ai/schemas";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 type OptimizeRequest = {
-  jobTitle: string;
-  jobType: "intern" | "fulltime";
-  jobDescription: string;
-  notes: string;
-  revisionNotes?: string;
-  resumeText: string;
-  projectMaterialsText?: string;
+  jobProfile: unknown;
+  resumeProfile: unknown;
+  diagnosisScores: unknown;
+  diagnosisActions: Array<{
+    dimension: string;
+    suggestion: string;
+    adopted: boolean;
+    userComment: string;
+  }>;
 };
 
 function buildErrorMessage(error: unknown) {
@@ -51,56 +53,27 @@ function buildErrorMessage(error: unknown) {
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Partial<OptimizeRequest>;
-    const jobTitle = body.jobTitle?.trim() ?? "";
-    const jobType = body.jobType ?? "intern";
-    const jobDescription = body.jobDescription?.trim() ?? "";
-    const notes = body.notes?.trim() ?? "";
-    const resumeText = body.resumeText?.trim() ?? "";
-    const projectMaterialsText = body.projectMaterialsText?.trim() ?? "";
+    const jobProfile = body.jobProfile ? jobProfileSchema.parse(body.jobProfile) : null;
+    const resumeProfile = body.resumeProfile ? resumeProfileSchema.parse(body.resumeProfile) : null;
+    const diagnosisScores = body.diagnosisScores
+      ? resumeDiagnosisSchema.shape.diagnosisScores.parse(body.diagnosisScores)
+      : null;
+    const diagnosisActions = body.diagnosisActions ?? [];
 
-    if (!resumeText) {
-      return NextResponse.json({ detail: "缺少简历文本。" }, { status: 400 });
-    }
-
-    if (!jobDescription) {
-      return NextResponse.json({ detail: "缺少目标岗位 JD。" }, { status: 400 });
+    if (!jobProfile || !resumeProfile || !diagnosisScores) {
+      return NextResponse.json({ detail: "缺少第二节点的结构化诊断结果。" }, { status: 400 });
     }
 
     const client = getOpenAIClient();
-
-    const baselineResponse = await client.responses.parse({
-      model: "gpt-4.1-nano",
-      instructions: buildBaselineReviewInstructions(),
-      input: buildBaselineReviewPrompt({
-        jobTitle,
-        jobType,
-        jobDescription,
-        originalResume: resumeText,
-        notes,
-        projectMaterials: projectMaterialsText
-      }),
-      text: {
-        format: zodTextFormat(resumeBaselineReviewSchema, "resume_baseline_review")
-      }
-    });
-
-    const baselineReview = baselineResponse.output_parsed;
-    if (!baselineReview) {
-      throw new Error("原始简历诊断失败。");
-    }
 
     const optimizationResponse = await client.responses.parse({
       model: "gpt-4.1-nano",
       instructions: buildResumeOptimizationInstructions(),
       input: buildResumeOptimizationPrompt({
-        jobProfile: baselineReview.jobProfile,
-        directEdits: baselineReview.directEdits,
-        needsUserInputEdits: baselineReview.needsUserInputEdits,
-        keywordGapAnalysis: baselineReview.keywordGapAnalysis,
-        originalResume: resumeText,
-        notes,
-        revisionNotes: body.revisionNotes?.trim() ?? "",
-        projectMaterials: projectMaterialsText
+        jobProfile,
+        resumeProfile,
+        diagnosisScores,
+        diagnosisActions
       }),
       text: {
         format: zodTextFormat(resumeOptimizationOutputSchema, "resume_optimization_output")
@@ -115,36 +88,14 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true,
       result: {
-        jobProfile: baselineReview.jobProfile,
-        optimizedResumeText: optimizationOutput.optimizedResume.plainTextResume,
-        optimizedResumeMarkdown: optimizationOutput.optimizedResume.markdownResume,
-        optimizedResumeDoc: {
-          candidateName: optimizationOutput.optimizedResume.candidateName,
-          headline: optimizationOutput.optimizedResume.headline,
-          contactLines: optimizationOutput.optimizedResume.contactLines,
-          summary: optimizationOutput.optimizedResume.summary,
-          experience: optimizationOutput.optimizedResume.experience,
-          projects: optimizationOutput.optimizedResume.projects,
-          education: optimizationOutput.optimizedResume.education,
-          skills: optimizationOutput.optimizedResume.skills,
-          additionalSections: optimizationOutput.optimizedResume.additionalSections
-        },
-        jobKeywords: optimizationOutput.optimizedResume.highlightedKeywords,
-        directEdits: baselineReview.directEdits,
-        needsUserInputEdits: baselineReview.needsUserInputEdits,
-        keywordGapAnalysis: baselineReview.keywordGapAnalysis,
-        gapAnalysis: optimizationOutput.gapAnalysis,
-        coverLetterTalkingPoints: optimizationOutput.coverLetterTalkingPoints,
-        changeLog: optimizationOutput.optimizedResume.changeLog,
-        riskNotes: optimizationOutput.optimizedResume.riskNotes,
-        beforeScores: baselineReview.baselineScores,
-        afterScores: optimizationOutput.afterScores,
-        overallDelta:
-          Math.round(
-            (optimizationOutput.afterScores.overallScore - baselineReview.baselineScores.overallScore) *
-              10
-          ) / 10,
-        summary: optimizationOutput.summary
+        jobProfile,
+        optimizedResumeProfile: optimizationOutput.optimizedResumeProfile,
+        optimizedResumeText: JSON.stringify(optimizationOutput.optimizedResumeProfile, null, 2),
+        beforeScores: diagnosisScores,
+        afterScores: optimizationOutput.optimizedDiagnosisScores,
+        strengths: optimizationOutput.strengths,
+        gaps: optimizationOutput.gaps,
+        successPrediction: optimizationOutput.successPrediction
       }
     });
   } catch (error) {

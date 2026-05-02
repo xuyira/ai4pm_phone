@@ -34,6 +34,12 @@ export type ResumeDraft = {
   projectMaterials: ResumeExtraction | null;
 };
 
+export type ResumeDiagnosisActionInput = {
+  dimension: string;
+  adopted: boolean;
+  userComment: string;
+};
+
 export type ResumeDimensionScore = {
   score: number;
   reason: string;
@@ -241,21 +247,63 @@ export type ResumeOptimizationResult = {
     hardRequirements: string[];
     summary: string;
   };
+  optimizedResumeProfile: ResumeProfile;
   optimizedResumeText: string;
-  optimizedResumeMarkdown: string;
-  optimizedResumeDoc: ResumeStructuredDocument;
-  jobKeywords: string[];
-  directEdits: ResumeDirectEdit[];
-  needsUserInputEdits: ResumeNeedsUserInputEdit[];
-  keywordGapAnalysis: ResumeKeywordGapItem[];
-  gapAnalysis: ResumeGapAnalysis;
-  coverLetterTalkingPoints: string[];
-  changeLog: string[];
-  riskNotes: string[];
-  beforeScores: ResumeScoreSummary;
-  afterScores: ResumeScoreSummary;
-  overallDelta: number;
-  summary: string;
+  beforeScores: ResumeDiagnosisScores;
+  afterScores: {
+    structureClarity: {
+      originalScore: number;
+      delta: number;
+      finalScore: number;
+      reason: string;
+    };
+    resultQuantification: {
+      originalScore: number;
+      delta: number;
+      finalScore: number;
+      reason: string;
+    };
+    productExpression: {
+      originalScore: number;
+      delta: number;
+      finalScore: number;
+      reason: string;
+    };
+    languageProfessionalism: {
+      originalScore: number;
+      delta: number;
+      finalScore: number;
+      reason: string;
+    };
+    responsibilityCoverage: {
+      originalScore: number;
+      delta: number;
+      finalScore: number;
+      reason: string;
+    };
+    industryRelevance: {
+      originalScore: number;
+      delta: number;
+      finalScore: number;
+      reason: string;
+    };
+    hardRequirementFit: {
+      originalScore: number;
+      delta: number;
+      finalScore: number;
+      reason: string;
+    };
+  };
+  strengths: string[];
+  gaps: Array<{
+    gap: string;
+    suggestion: string;
+  }>;
+  successPrediction: {
+    level: "成功率较高" | "成功率中等" | "成功率较低";
+    reason: string;
+    encouragement: string;
+  };
 };
 
 export type ResumeOptimizationStatus = "idle" | "running" | "completed" | "failed";
@@ -264,6 +312,7 @@ type PrototypeStoreValue = {
   records: RecordItem[];
   resumeDraft: ResumeDraft;
   resumeDiagnosis: ResumeDiagnosisResult | null;
+  resumeDiagnosisActions: ResumeDiagnosisActionInput[];
   resumeDiagnosisStatus: ResumeOptimizationStatus;
   resumeDiagnosisError: string | null;
   resumeOptimization: ResumeOptimizationResult | null;
@@ -276,6 +325,7 @@ type PrototypeStoreValue = {
   setResumeExtraction: (extraction: ResumeExtraction) => void;
   setProjectMaterials: (materials: ResumeExtraction) => void;
   setResumeDiagnosis: (result: ResumeDiagnosisResult) => void;
+  setResumeDiagnosisActions: (actions: ResumeDiagnosisActionInput[]) => void;
   setResumeDiagnosisStatus: (status: ResumeOptimizationStatus, error?: string | null) => void;
   setResumeOptimization: (result: ResumeOptimizationResult) => void;
   setResumeOptimizationStatus: (
@@ -306,6 +356,9 @@ export function PrototypeStoreProvider({
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [resumeDraft, setResumeDraft] = useState<ResumeDraft>(defaultResumeDraft);
   const [resumeDiagnosis, setResumeDiagnosisState] = useState<ResumeDiagnosisResult | null>(null);
+  const [resumeDiagnosisActions, setResumeDiagnosisActionsState] = useState<
+    ResumeDiagnosisActionInput[]
+  >([]);
   const [resumeDiagnosisStatus, setResumeDiagnosisStatusState] =
     useState<ResumeOptimizationStatus>("idle");
   const [resumeDiagnosisError, setResumeDiagnosisError] = useState<string | null>(null);
@@ -337,6 +390,7 @@ export function PrototypeStoreProvider({
       ...patch
     }));
     setResumeDiagnosisState(null);
+    setResumeDiagnosisActionsState([]);
     setResumeDiagnosisStatusState("idle");
     setResumeDiagnosisError(null);
     setResumeOptimizationState(null);
@@ -350,6 +404,7 @@ export function PrototypeStoreProvider({
       extractedResume: extraction
     }));
     setResumeDiagnosisState(null);
+    setResumeDiagnosisActionsState([]);
     setResumeDiagnosisStatusState("idle");
     setResumeDiagnosisError(null);
     setResumeOptimizationState(null);
@@ -363,6 +418,7 @@ export function PrototypeStoreProvider({
       projectMaterials: materials
     }));
     setResumeDiagnosisState(null);
+    setResumeDiagnosisActionsState([]);
     setResumeDiagnosisStatusState("idle");
     setResumeDiagnosisError(null);
     setResumeOptimizationState(null);
@@ -376,12 +432,17 @@ export function PrototypeStoreProvider({
     setResumeDiagnosisError(null);
   }, []);
 
+  const setResumeDiagnosisActions = useCallback((actions: ResumeDiagnosisActionInput[]) => {
+    setResumeDiagnosisActionsState(actions);
+  }, []);
+
   const setResumeDiagnosisStatus = useCallback(
     (status: ResumeOptimizationStatus, error?: string | null) => {
       setResumeDiagnosisStatusState(status);
       setResumeDiagnosisError(error ?? null);
       if (status !== "completed") {
         setResumeDiagnosisState(null);
+        setResumeDiagnosisActionsState([]);
       }
     },
     []
@@ -412,6 +473,7 @@ export function PrototypeStoreProvider({
 
   const clearResumeDiagnosis = useCallback(() => {
     setResumeDiagnosisState(null);
+    setResumeDiagnosisActionsState([]);
     setResumeDiagnosisStatusState("idle");
     setResumeDiagnosisError(null);
   }, []);
@@ -440,6 +502,7 @@ export function PrototypeStoreProvider({
       records: visibleRecords,
       resumeDraft,
       resumeDiagnosis,
+      resumeDiagnosisActions,
       resumeDiagnosisStatus,
       resumeDiagnosisError,
       resumeOptimization,
@@ -452,6 +515,7 @@ export function PrototypeStoreProvider({
       setResumeExtraction,
       setProjectMaterials,
       setResumeDiagnosis,
+      setResumeDiagnosisActions,
       setResumeDiagnosisStatus,
       setResumeOptimization,
       setResumeOptimizationStatus,
@@ -466,6 +530,7 @@ export function PrototypeStoreProvider({
       deleteRecord,
       resumeDraft,
       resumeDiagnosis,
+      resumeDiagnosisActions,
       resumeDiagnosisError,
       resumeDiagnosisStatus,
       resumeOptimization,
@@ -474,6 +539,7 @@ export function PrototypeStoreProvider({
       setResumeExtraction,
       setProjectMaterials,
       setResumeDiagnosis,
+      setResumeDiagnosisActions,
       setResumeDiagnosisStatus,
       setResumeOptimization,
       setResumeOptimizationStatus,

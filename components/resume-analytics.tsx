@@ -25,6 +25,16 @@ function buildPolygon(items: RadarItem[]) {
     .join(" ");
 }
 
+function buildPolygonWithRadius(items: RadarItem[], radius = 42) {
+  return items
+    .map((item, index) => {
+      const angle = (360 / items.length) * index;
+      const point = polarToCartesian(angle, (item.value / 100) * radius);
+      return `${point.x},${point.y}`;
+    })
+    .join(" ");
+}
+
 function buildLabelPosition(index: number, total: number, radius = 51) {
   const angle = (360 / total) * index;
   return polarToCartesian(angle, radius);
@@ -141,6 +151,104 @@ export function DimensionCard({
       </div>
       <div className="record-subtitle" style={{ marginTop: 8 }}>
         建议：{detail.improvement}
+      </div>
+    </div>
+  );
+}
+
+export function CompareScoreRadar({
+  title,
+  beforeItems,
+  afterItems,
+  hideTitle = false
+}: {
+  title?: string;
+  beforeItems: RadarItem[];
+  afterItems: RadarItem[];
+  hideTitle?: boolean;
+}) {
+  const beforePolygon = buildPolygonWithRadius(beforeItems);
+  const afterPolygon = buildPolygonWithRadius(afterItems);
+
+  return (
+    <div className="score-card">
+      {hideTitle ? null : <div className="record-title">{title}</div>}
+      <svg viewBox="0 0 120 120" className="radar-svg" aria-label={title}>
+        {[
+          { radius: 8.4, label: "2" },
+          { radius: 16.8, label: "4" },
+          { radius: 25.2, label: "6" },
+          { radius: 33.6, label: "8" },
+          { radius: 42, label: "10" }
+        ].map((layer) => (
+          <g key={layer.radius}>
+            <circle
+              cx="60"
+              cy="60"
+              r={layer.radius}
+              fill="none"
+              stroke="rgba(168, 132, 86, 0.18)"
+              strokeWidth="1"
+            />
+            <text
+              x="62"
+              y={60 - layer.radius + 4}
+              fontSize="4"
+              fill="rgba(122, 97, 68, 0.72)"
+            >
+              {layer.label}
+            </text>
+          </g>
+        ))}
+        {afterItems.map((item, index) => {
+          const angle = (360 / afterItems.length) * index;
+          const point = polarToCartesian(angle, 42);
+          return (
+            <g key={item.label}>
+              <line
+                x1="60"
+                y1="60"
+                x2={point.x}
+                y2={point.y}
+                stroke="rgba(168, 132, 86, 0.16)"
+                strokeWidth="1"
+              />
+              <text
+                x={buildLabelPosition(index, afterItems.length).x}
+                y={buildLabelPosition(index, afterItems.length).y}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="4.2"
+                fill="rgba(91, 69, 42, 0.92)"
+              >
+                {item.label}
+              </text>
+            </g>
+          );
+        })}
+        <polygon
+          points={beforePolygon}
+          fill="rgba(193, 201, 214, 0.2)"
+          stroke="rgba(117, 133, 156, 0.9)"
+          strokeWidth="2"
+          strokeDasharray="3 2"
+        />
+        <polygon
+          points={afterPolygon}
+          fill="rgba(202, 167, 114, 0.28)"
+          stroke="rgba(157, 129, 98, 0.92)"
+          strokeWidth="2"
+        />
+      </svg>
+      <div className="radar-compare-legend">
+        <span className="radar-legend-item">
+          <span className="radar-legend-dot radar-legend-dot-before" />
+          优化前
+        </span>
+        <span className="radar-legend-item">
+          <span className="radar-legend-dot radar-legend-dot-after" />
+          优化后
+        </span>
       </div>
     </div>
   );

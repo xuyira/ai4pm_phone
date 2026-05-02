@@ -16,8 +16,9 @@ export default function ResumeLoadingPage() {
   const [jobExpanded, setJobExpanded] = useState(false);
   const {
     resumeDraft,
+    resumeDiagnosis,
+    resumeDiagnosisActions,
     resumeOptimization,
-    resumeOptimizationError,
     resumeOptimizationStatus,
     setResumeOptimization,
     setResumeOptimizationStatus
@@ -34,9 +35,9 @@ export default function ResumeLoadingPage() {
       return;
     }
 
-    if (!resumeDraft.extractedResume?.content.trim() || !resumeDraft.jobDescription.trim()) {
-      push("缺少简历文本或 JD，已返回上传页。");
-      router.replace("/resume/upload");
+    if (!resumeDiagnosis) {
+      push("缺少第二节点的诊断结果，已返回诊断页。");
+      router.replace("/resume/diagnosis-result");
       return;
     }
 
@@ -49,12 +50,16 @@ export default function ResumeLoadingPage() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        jobTitle: resumeDraft.jobTitle,
-        jobType: resumeDraft.jobType,
-        jobDescription: resumeDraft.jobDescription,
-        notes: resumeDraft.notes,
-        resumeText: resumeDraft.extractedResume.content,
-        projectMaterialsText: resumeDraft.projectMaterials?.content || ""
+        jobProfile: resumeDiagnosis.jobProfile,
+        resumeProfile: resumeDiagnosis.resumeProfile,
+        diagnosisScores: resumeDiagnosis.diagnosisScores,
+        diagnosisActions: resumeDiagnosisActions.map((item) => ({
+          ...item,
+          suggestion:
+            resumeDiagnosis.diagnosisScores[
+              item.dimension as keyof typeof resumeDiagnosis.diagnosisScores
+            ]?.improvement || ""
+        }))
       })
     })
       .then(async (response) => {
@@ -71,11 +76,8 @@ export default function ResumeLoadingPage() {
       });
   }, [
     push,
-    resumeDraft.extractedResume,
-    resumeDraft.jobDescription,
-    resumeDraft.jobTitle,
-    resumeDraft.jobType,
-    resumeDraft.notes,
+    resumeDiagnosis,
+    resumeDiagnosisActions,
     resumeOptimization,
     resumeOptimizationStatus,
     router,
@@ -93,7 +95,7 @@ export default function ResumeLoadingPage() {
           AI简历优化
         </h1>
       </section>
-      <StepStrip steps={["上传简历与 JD", "AI 处理中", "结果页"]} active={1} />
+      <StepStrip steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]} active={2} />
 
       <section className="section form-stack">
         <ExpandableInfoBox
