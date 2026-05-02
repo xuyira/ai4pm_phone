@@ -9,11 +9,11 @@ import { StepStrip } from "@/components/ui";
 
 const dimensionMeta = [
   { key: "structureClarity", label: "结构清晰度" },
-  { key: "informationCompleteness", label: "内容完整度" },
   { key: "resultQuantification", label: "结果量化度" },
   { key: "productExpression", label: "产品表达度" },
+  { key: "languageProfessionalism", label: "语言专业度" },
   { key: "responsibilityCoverage", label: "职责覆盖度" },
-  { key: "atsKeywordMatch", label: "ATS匹配度" },
+  { key: "industryRelevance", label: "行业相关度" },
   { key: "hardRequirementFit", label: "门槛达成度" }
 ] as const;
 
@@ -59,7 +59,7 @@ export default function ResumeDiagnosisResultPage() {
           AI简历诊断结果
         </h1>
       </section>
-      <StepStrip steps={["上传简历与 JD", "AI 简历诊断", "诊断结果"]} active={2} />
+      <StepStrip steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]} active={1} />
 
       <section className="section form-stack">
         <ExpandableInfoBox
@@ -79,12 +79,14 @@ export default function ResumeDiagnosisResultPage() {
       </section>
 
       <section className="section score-panel diagnosis-score-panel">
-        <div className="score-card">
-          <div className="muted">诊断总分</div>
-          <div className="score-big">{totalScore}</div>
-          <div className="record-subtitle">7维度平均分，满分 10 分</div>
+        <div className="score-card diagnosis-radar-card">
+          <div className="diagnosis-total-score">
+            <div className="muted">简历总分</div>
+            <div className="score-big">{totalScore}</div>
+            <div className="record-subtitle">7维度平均分，满分 10 分</div>
+          </div>
+          <ScoreRadar items={radarItems} hideTitle hideLegend />
         </div>
-        <ScoreRadar title="7维诊断雷达图" items={radarItems} />
       </section>
 
       <section className="section form-stack">
@@ -100,7 +102,8 @@ export default function ResumeDiagnosisResultPage() {
                 onClick={() => toggleCard(item.key)}
               >
                 <span className="record-title">{item.label}</span>
-                <span className="pill">{detail.score}</span>
+                <span className="pill diagnosis-score-pill">{detail.score}</span>
+                <span className={`diagnosis-toggle-icon${isOpen ? " is-open" : ""}`}>▾</span>
               </button>
               {isOpen ? (
                 <div className="form-stack" style={{ marginTop: 12 }}>

@@ -25,25 +25,34 @@ function buildPolygon(items: RadarItem[]) {
     .join(" ");
 }
 
+function buildLabelPosition(index: number, total: number, radius = 51) {
+  const angle = (360 / total) * index;
+  return polarToCartesian(angle, radius);
+}
+
 export function ScoreRadar({
   title,
-  items
+  items,
+  hideTitle = false,
+  hideLegend = false
 }: {
-  title: string;
+  title?: string;
   items: RadarItem[];
+  hideTitle?: boolean;
+  hideLegend?: boolean;
 }) {
   const polygon = buildPolygon(items);
 
   return (
     <div className="score-card">
-      <div className="record-title">{title}</div>
+      {hideTitle ? null : <div className="record-title">{title}</div>}
       <svg viewBox="0 0 120 120" className="radar-svg" aria-label={title}>
         {[
-          { radius: 8.4, label: "20" },
-          { radius: 16.8, label: "40" },
-          { radius: 25.2, label: "60" },
-          { radius: 33.6, label: "80" },
-          { radius: 42, label: "100" }
+          { radius: 8.4, label: "2" },
+          { radius: 16.8, label: "4" },
+          { radius: 25.2, label: "6" },
+          { radius: 33.6, label: "8" },
+          { radius: 42, label: "10" }
         ].map((layer) => (
           <g key={layer.radius}>
             <circle
@@ -68,15 +77,26 @@ export function ScoreRadar({
           const angle = (360 / items.length) * index;
           const point = polarToCartesian(angle, 42);
           return (
-            <line
-              key={item.label}
-              x1="60"
-              y1="60"
-              x2={point.x}
-              y2={point.y}
-              stroke="rgba(168, 132, 86, 0.16)"
-              strokeWidth="1"
-            />
+            <g key={item.label}>
+              <line
+                x1="60"
+                y1="60"
+                x2={point.x}
+                y2={point.y}
+                stroke="rgba(168, 132, 86, 0.16)"
+                strokeWidth="1"
+              />
+              <text
+                x={buildLabelPosition(index, items.length).x}
+                y={buildLabelPosition(index, items.length).y}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="4.2"
+                fill="rgba(91, 69, 42, 0.92)"
+              >
+                {item.label}
+              </text>
+            </g>
           );
         })}
         <polygon
@@ -86,14 +106,16 @@ export function ScoreRadar({
           strokeWidth="2"
         />
       </svg>
-      <div className="radar-labels">
-        {items.map((item) => (
-          <div key={item.label} className="radar-label-row">
-            <span>{item.label}</span>
-            <strong>{item.value}</strong>
-          </div>
-        ))}
-      </div>
+      {hideLegend ? null : (
+        <div className="radar-labels">
+          {items.map((item) => (
+            <div key={item.label} className="radar-label-row">
+              <span>{item.label}</span>
+              <strong>{item.value}</strong>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

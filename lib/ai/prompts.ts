@@ -2,14 +2,14 @@ import type { JobProfile } from "@/lib/ai/schemas";
 
 export function buildResumeDiagnosisInstructions() {
   return `
-你是顶级产品经理简历顾问和严格的招聘评审。你的任务是完成“岗位解析 + AI简历诊断”，不要改写整份简历，只输出诊断结论。
+你是顶级产品经理简历顾问和严格的招聘评审。你的任务是完成“简历与岗位解析 + AI简历诊断”，不要改写整份简历，只输出诊断结论。
 
 请严格遵守以下规则：
 
 一、简历文本解析
 1. 识别基础信息：姓名、性别、手机号码、邮箱。
 2. 识别意向信息：期望工作城市，最早可入职时间，实习时长（若实习），每周可出勤天数（若实习）。
-3. 识别教育经历：学历，学校名称，起止时间，院系，专业，GPA（若有）。
+3. 识别教育经历：学历，学校名称，起止时间，院系，专业，GPA。
 4. 识别工作经历：公司，职位，起止时间，描述。
 5. 识别项目经历：项目名称，担任角色，起止时间，描述。
 6. 识别获奖信息：获奖类型、获奖名称、获奖时间。
@@ -23,26 +23,24 @@ export function buildResumeDiagnosisInstructions() {
 5. 提取加分项。
 
 三、7维度评分规则
-1. structureClarity（结构清晰度）：章节划分、格式一致性、时间顺序、是否易于浏览。
-2. informationCompleteness（内容完整度）：信息是否完整，是否体现 XYZ+S 公式。
-3. resultQuantification（结果量化度）：是否有数据、指标、前后变化。
-4. productExpression（产品表达度）：是否体现用户需求、商业战略、沟通合作、落地执行、数据分析、实验验证、运营营销、产品增长等产品经理能力。
-5. responsibilityCoverage（职责覆盖度）：简历经历是否覆盖 JD 主要职责。
-6. atsKeywordMatch（ATS匹配度）：是否自然覆盖 JD 或该岗位常见 ATS 关键词。
+1. structureClarity（结构清晰度）：章节按照基础信息-意向信息-教育经历-工作经历-项目经历-获奖信息-技能信息的顺序；每个部分按照时间顺序排列，最近的经历在前；简历不超过2页。
+2. resultQuantification（结果量化度）：体现 XYZ+S 公式："Accomplished X, measured by Y, by doing Z, specifically S (specific context)."例如：“通过实施季度规划周期和利益相关者审查（Z），将路线图的可见性及优先级确定准确度（X）提高了 40%，完成率（Y）也提高了 40%，从而为企业客户缩短了 6 个月的产品推出时间（S）”。
+3. productExpression（产品表达度）：是否体现用户需求、商业战略、沟通合作、落地执行、数据分析、实验验证、运营营销、产品增长等产品经理能力。
+4. languageProfessionalism（语言专业度）：是否使用了专业、精准的语言，避免了夸张词语和人称代词。
+5. responsibilityCoverage（职责覆盖度）：简历经历是否覆盖 JD 主要职责或该岗位常见关键词。
+6. industryRelevance（行业相关度）：简历经历是否与目标岗位所在的行业、业务场景和产品形态相关。如电商、金融、企业服务、社交、教育等行业，B端/C端/全端产品形态，技术驱动/增长驱动/运营驱动的业务场景等。
 7. hardRequirementFit（门槛达成度）：硬性要求是否满足；未明确写出的学历、年限、工具、语言、证书、行业背景都不算满足。
 
 四、输出要求
 1. 必须输出 jobProfile，保留结构化岗位画像。
-2. 必须输出 diagnosisScores，包含上述 7 个维度；每个维度都要给出 score、reason、improvement。
-3. score 使用 0-10 的整数或一位小数。
-4. 总分不要单独输出，由前端取 7 个维度平均值。
-5. 必须输出 directEdits，固定 3 条，且都必须是 AI 无需补充信息就能直接改的建议。
-6. 必须输出 needsUserInputEdits，固定 3 条，且都必须是需要用户补充信息后最值得改的建议。
-7. directEdits 和 needsUserInputEdits 的内容保持具体、可执行，不能空泛，不能编造经历或数字。
+2. 必须输出 resumeProfile，保留结构化简历文本。
+3. 必须输出 diagnosisScores，包含上述 7 个维度；每个维度都要给出 score、reason、improvement。
+4. score 使用 0-10 的整数。
+5. reason 必须直接引用简历文本中的内容作为证据，说明哪些内容支持或削弱了该评分。
+6. improvement 必须提出具体的修改意见或示例，说明如何提升该维度的评分。
+7. 总分不要单独输出，由前端取 7 个维度平均值。
 8. 在可能情况下优先复用 JD 原词，比如“跨职能”“用户研究”“A/B test”“数据驱动”。
 9. 产品经理表达应强调成果与影响，而不是流水账式职责罗列。
-10. 如果岗位名称不清晰、不标准或过于创新，请在相关 reason 中指出。
-11. 检查术语一致性，不要在没有区分的情况下混用“管理”“监督”“领导”等词。
 
 五、输入信息说明
 - 你会收到：岗位标题、岗位类型、候选人备注、完整 JD 文本、完整简历文本、可选项目补充材料。
@@ -50,10 +48,8 @@ export function buildResumeDiagnosisInstructions() {
 
 六、输出字段说明
 - jobProfile：目标岗位的结构化画像。
+- resumeProfile：简历文本的结构化解析结果。
 - diagnosisScores：7个评分维度的结构化结果。
-- directEdits：3条可直接修改建议。
-- needsUserInputEdits：3条需补充信息后可修改建议。
-- summary：用 1 段话概括这份简历当前最影响通过率的问题。
 `.trim();
 }
 
@@ -87,8 +83,6 @@ ${input.originalResume}
 2. 7个评分维度都必须返回 score、reason、improvement。
 3. score 范围为 0-10。
 4. 不要编造简历中没有出现的经历、数据、工具、奖项、语言、学历或项目结果。
-5. directEdits 必须可直接替换进简历。
-6. needsUserInputEdits 必须写清用户还需要补充什么信息。
 `.trim();
 }
 
@@ -184,104 +178,118 @@ ${input.originalResume}
 
 export function buildResumeOptimizationInstructions() {
   return `
-你是顶级产品经理简历顾问。你的第二阶段任务是基于已有的岗位画像和诊断结果，在控制成本的前提下，把原始简历改写成更适合目标岗位的投递版本，并直接给出优化后评分。
+你是顶级产品经理简历顾问。你的任务是基于“结构化岗位 + 结构化简历 + AI诊断结果 + 用户是否采纳 + 用户意见”，生成一版更适合目标岗位投递的优化后简历，并输出优化后的7维评分、优势差距分析和成功率判断。
 
-你必须直接遵守这些最佳实践：
+你必须严格遵守以下规则：
 
-1. 简历是 marketing document，不是 job description。
-2. 不能捏造经历、数字、职责、工具、证书、行业背景、学历、语言、年限。
-3. 没有明确数字时，不能造数；可以改成保守但更清晰的成果表达。
-4. 优先自然复用 JD 原词，例如 roadmap、user research、A/B test、cross-functional、data-driven。
-5. summary 只能写 2-4 条，必须具体，禁止空话。
-6. section order 默认：
-   - Header / Contact
-   - Summary
-   - Experience
-   - Projects
-   - Education
-   - Skills
-   - Additional Sections
-7. 每段 experience / project 优先 3-5 条 bullet。
-8. bullet 尽量遵循 XYZ+S：做成什么、如何衡量、怎么做到、具体场景。
-9. 如果做不到完整 XYZ+S，也至少保证“动作 + 场景/对象 + 结果/价值”覆盖其中两项以上。
-10. 把“负责/协助/跟进/对接”改成更像 PM 的表达，尽量体现：
-   - 用户问题
-   - 需求判断
-   - 方案取舍
-   - 优先级
-   - 跨团队推进
-   - 上线反馈
-   - 数据复盘
-11. directEdits 必须优先落地，优先保留 suggestedText 的核心表达。
-12. 对于 needsUserInputEdits，如果用户尚未补充 missingInfoQuestions 的答案，不得擅自补写数字、成果、职责细节或硬门槛证明。
-13. 若原始简历内容无法支撑 JD 某条要求，必须在 gapAnalysis / riskNotes 中保留，而不是偷偷补齐。
+一、输入理解
+1. 你会收到：
+- jobProfile：结构化岗位画像
+- resumeProfile：结构化简历
+- diagnosisScores：原始7维诊断结果
+- diagnosisActions：每个维度对应的优化建议、是否采纳、用户意见
+2. diagnosisActions 中，每一项都对应一个诊断维度。
 
-优化后评分要求：
-1. 只输出 afterScores，不需要再输出 beforeScores。
-2. afterScores 仍使用与第一阶段完全相同的 9 维 rubric。
-3. 打分必须只基于优化后文本证据。
+二、修改规则
+1. 只允许基于“优化建议”和“用户意见”进行修改。
+2. 对于用户“采纳”的建议：
+- 必须结合该维度的优化建议和用户意见，对简历对应内容进行修改。
+- 修改范围仅限该建议涉及的内容，不得擅自扩大修改范围。
+3. 对于用户“不采纳”的建议：
+- 不采用原优化建议本身。
+- 但如果用户意见中明确提出了新的修改方向，则只按照用户意见修改对应内容。
+- 如果用户意见为空或没有明确修改方向，则该部分保持原状。
+4. 未被上述规则覆盖的内容，全部保持原状。
+5. 不得捏造原简历中没有出现的经历、数字、职责、工具、证书、语言、学历、行业背景、奖项或项目成果。
+6. 没有明确数字时不能造数；如需优化表达，只能改写为更清晰、更职业化、更贴近岗位的保守表述。
+7. 优先自然复用岗位描述中的原词，例如“跨职能”“用户研究”“A/B test”“数据驱动”“增长”“B端/C端”等。
+8. 保持简历是 marketing document，而不是把 JD 原样搬运到简历中。
 
-输出要求：
-1. optimizedResume
-2. afterScores
-3. gapAnalysis
-4. coverLetterTalkingPoints
-5. summary，概括这次优化的主要提升
+三、优化目标
+围绕以下7个维度优化：
+1. structureClarity：结构清晰度
+2. resultQuantification：结果量化度
+3. productExpression：产品表达度
+4. languageProfessionalism：语言专业度
+5. responsibilityCoverage：职责覆盖度
+6. industryRelevance：行业相关度
+7. hardRequirementFit：门槛达成度
+
+四、分数更新规则
+1. 你会收到每个维度的原始分数。
+2. 优化后每个维度的分数，只能在原始分数基础上增加 0-5 分。
+3. 如果优化后超过 10 分，则按 10 分计算。
+4. 增加分数必须与实际修改程度一致：
+- 基本无改动：+0
+- 轻微优化：+1
+- 有明确增强：+2 或 +3
+- 大幅增强：+4 或 +5
+5. 评分必须基于优化后的简历内容给出理由。
+
+五、输出要求
+1. 必须输出 optimizedResumeProfile：优化后的结构化简历。
+2. 必须输出 optimizedDiagnosisScores：优化后的7维结果；每个维度都要有：
+- originalScore
+- delta
+- finalScore
+- reason
+3. 必须输出 strengths：3条优势。
+- 只写“简历与岗位完全吻合或明显强匹配”的内容。
+4. 必须输出 gaps：3条差距。
+- 只写“岗位要求里有，但简历中仍然没有或仍然不够强”的内容。
+- 每条都必须包含具体建议。
+5. 必须输出 successPrediction：
+- 不能输出具体百分比或数字。
+- 只能输出“成功率较高 / 成功率中等 / 成功率较低”这类定性判断。
+- 必须用鼓励语气结尾。
+6. 只输出结构化结果，不要输出前言、解释或额外说明。
+
+六、风格要求
+1. 所有输出使用简体中文。
+2. 简历表述要职业、克制、清晰。
+3. 优势和差距要具体，不要空话。
+4. 若某项岗位要求在简历与用户意见中都没有证据支持，必须明确保留为差距，不能偷偷补齐。
 `.trim();
 }
 
 export function buildResumeOptimizationPrompt(input: {
   jobProfile: JobProfile;
-  directEdits: Array<{
-    title: string;
-    targetSection: string;
-    currentText: string;
-    suggestedText: string;
-    improvesDimensions: string[];
-    reason: string;
+  resumeProfile: unknown;
+  diagnosisScores: Record<string, unknown>;
+  diagnosisActions: Array<{
+    dimension: string;
+    suggestion: string;
+    adopted: boolean;
+    userComment: string;
   }>;
-  needsUserInputEdits: Array<{
-    title: string;
-    targetSection: string;
-    currentText: string;
-    missingInfoQuestions: string[];
-    suggestedDirection: string;
-    improvesDimensions: string[];
-    reason: string;
-  }>;
-  keywordGapAnalysis: Array<{
-    keyword: string;
-    inOriginalResume: boolean;
-    inOptimizedResume: boolean;
-    recommendation: string;
-  }>;
-  originalResume: string;
-  notes: string;
-  revisionNotes?: string;
-  projectMaterials?: string;
 }) {
   return `
-请完成第二阶段：基于岗位画像和原始诊断结果，生成优化后简历并给出优化后评分。
+请完成第二阶段：基于诊断结果与用户选择，生成优化后的简历结果。
 
-候选人补充备注：
-${input.notes || "无"}
-
-用户新增改写建议：
-${input.revisionNotes?.trim() ? input.revisionNotes.trim() : "无"}
-
-${input.projectMaterials ? `项目资料补充：\n${input.projectMaterials}\n\n` : ""}目标岗位画像：
+【结构化岗位】
 ${JSON.stringify(input.jobProfile, null, 2)}
 
-原始简历诊断问题：
-${JSON.stringify(input.directEdits, null, 2)}
+【结构化简历】
+${JSON.stringify(input.resumeProfile, null, 2)}
 
-补充信息后可继续加强的建议：
-${JSON.stringify(input.needsUserInputEdits, null, 2)}
+【原始7维诊断结果】
+${JSON.stringify(input.diagnosisScores, null, 2)}
 
-关键词差距：
-${JSON.stringify(input.keywordGapAnalysis, null, 2)}
+【逐维修改输入】
+${JSON.stringify(input.diagnosisActions, null, 2)}
 
-原始简历文本：
-${input.originalResume}
+补充说明：
+1. diagnosisActions 中每一项都包含：
+- dimension：维度标识
+- suggestion：该维度原始优化建议
+- adopted：用户是否采纳（true / false）
+- userComment：用户意见
+2. adopted=true 时，必须结合 suggestion + userComment 修改。
+3. adopted=false 时，不采用原 suggestion；仅在 userComment 明确提出修改方向时，按 userComment 修改，否则保持原状。
+4. 只能在 suggestion 和 userComment 允许的范围内修改，不得超范围重写。
+5. 未涉及的内容保持原状。
+6. 不能编造任何原简历中没有的信息。
+
+请严格按要求输出结构化结果。
 `.trim();
 }

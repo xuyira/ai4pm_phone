@@ -136,12 +136,74 @@ export type ResumeDiagnosisDimension = {
 
 export type ResumeDiagnosisScores = {
   structureClarity: ResumeDiagnosisDimension;
-  informationCompleteness: ResumeDiagnosisDimension;
   resultQuantification: ResumeDiagnosisDimension;
   productExpression: ResumeDiagnosisDimension;
+  languageProfessionalism: ResumeDiagnosisDimension;
   responsibilityCoverage: ResumeDiagnosisDimension;
-  atsKeywordMatch: ResumeDiagnosisDimension;
+  industryRelevance: ResumeDiagnosisDimension;
   hardRequirementFit: ResumeDiagnosisDimension;
+};
+
+export type ResumeProfileBasicInfo = {
+  name: string;
+  gender: string;
+  phone: string;
+  email: string;
+};
+
+export type ResumeProfileJobIntent = {
+  targetCity: string;
+  earliestStartDate: string;
+  internshipDuration: string;
+  weeklyAvailability: string;
+};
+
+export type ResumeProfileEducationItem = {
+  degree: string;
+  school: string;
+  startDate: string;
+  endDate: string;
+  department: string;
+  major: string;
+  gpa: string;
+};
+
+export type ResumeProfileWorkItem = {
+  company: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+};
+
+export type ResumeProfileProjectItem = {
+  projectName: string;
+  role: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+};
+
+export type ResumeProfileAwardItem = {
+  awardType: string;
+  awardName: string;
+  awardDate: string;
+};
+
+export type ResumeProfileSkills = {
+  languageTests: string[];
+  programmingLanguages: string[];
+  aiSkills: string[];
+};
+
+export type ResumeProfile = {
+  basicInfo: ResumeProfileBasicInfo;
+  jobIntent: ResumeProfileJobIntent;
+  education: ResumeProfileEducationItem[];
+  workExperience: ResumeProfileWorkItem[];
+  projectExperience: ResumeProfileProjectItem[];
+  awards: ResumeProfileAwardItem[];
+  skills: ResumeProfileSkills;
 };
 
 export type ResumeDiagnosisResult = {
@@ -159,9 +221,8 @@ export type ResumeDiagnosisResult = {
     hardRequirements: string[];
     summary: string;
   };
+  resumeProfile: ResumeProfile;
   diagnosisScores: ResumeDiagnosisScores;
-  directEdits: ResumeDirectEdit[];
-  needsUserInputEdits: ResumeNeedsUserInputEdit[];
   summary: string;
 };
 

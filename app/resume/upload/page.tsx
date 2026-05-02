@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { FakeUploadCard, ResumeTypeSwitch, ProjectMaterialsUploadCard } from "@/components/interactive";
 import { usePrototypeStore } from "@/components/prototype-store";
 import { useToast } from "@/components/toast";
+import { StepStrip } from "@/components/ui";
 
 export default function ResumeUploadPage() {
   const router = useRouter();
@@ -29,6 +30,7 @@ export default function ResumeUploadPage() {
       <section className="section">
         <h1 className="resume-page-title">AI简历优化</h1>
       </section>
+      <StepStrip steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]} active={0} />
 
       <section className="section form-stack">
         <div className="resume-block">

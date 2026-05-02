@@ -13,6 +13,68 @@ const diagnosisDimensionSchema = z.object({
   improvement: z.string()
 });
 
+const resumeBasicInfoSchema = z.object({
+  name: z.string(),
+  gender: z.string(),
+  phone: z.string(),
+  email: z.string()
+});
+
+const resumeJobIntentSchema = z.object({
+  targetCity: z.string(),
+  earliestStartDate: z.string(),
+  internshipDuration: z.string(),
+  weeklyAvailability: z.string()
+});
+
+const resumeEducationItemSchema = z.object({
+  degree: z.string(),
+  school: z.string(),
+  startDate: z.string(),
+  endDate: z.string(),
+  department: z.string(),
+  major: z.string(),
+  gpa: z.string()
+});
+
+const resumeExperienceItemSchema = z.object({
+  company: z.string(),
+  title: z.string(),
+  startDate: z.string(),
+  endDate: z.string(),
+  description: z.string()
+});
+
+const resumeProjectItemSchema = z.object({
+  projectName: z.string(),
+  role: z.string(),
+  startDate: z.string(),
+  endDate: z.string(),
+  description: z.string()
+});
+
+const resumeAwardItemSchema = z.object({
+  awardType: z.string(),
+  awardName: z.string(),
+  awardDate: z.string()
+});
+
+const resumeSkillProfileSchema = z.object({
+  languageTests: z.array(z.string()),
+  programmingLanguages: z.array(z.string()),
+  aiSkills: z.array(z.string())
+});
+
+export const resumeProfileSchema = z.object({
+  basicInfo: resumeBasicInfoSchema,
+  jobIntent: resumeJobIntentSchema,
+  education: z.array(resumeEducationItemSchema),
+  workExperience: z.array(resumeExperienceItemSchema),
+  projectExperience: z.array(resumeProjectItemSchema),
+  awards: z.array(resumeAwardItemSchema),
+  skills: resumeSkillProfileSchema
+});
+
 export const jobProfileSchema = z.object({
   targetTitle: z.string(),
   jobTypeLabel: z.enum(["校招/实习", "社招"]),
@@ -49,6 +111,24 @@ export const optimizedResumeSchema = z.object({
   riskNotes: z.array(z.string()).min(1).max(6),
   plainTextResume: z.string(),
   markdownResume: z.string()
+});
+
+const optimizedDiagnosisDimensionSchema = z.object({
+  originalScore: z.number().min(0).max(10),
+  delta: z.number().min(0).max(5),
+  finalScore: z.number().min(0).max(10),
+  reason: z.string()
+});
+
+const optimizationGapItemSchema = z.object({
+  gap: z.string(),
+  suggestion: z.string()
+});
+
+const successPredictionSchema = z.object({
+  level: z.enum(["成功率较高", "成功率中等", "成功率较低"]),
+  reason: z.string(),
+  encouragement: z.string()
 });
 
 export const keywordGapItemSchema = z.object({
@@ -99,17 +179,16 @@ export const needsUserInputEditSchema = z.object({
 
 export const resumeDiagnosisSchema = z.object({
   jobProfile: jobProfileSchema,
+  resumeProfile: resumeProfileSchema,
   diagnosisScores: z.object({
     structureClarity: diagnosisDimensionSchema,
-    informationCompleteness: diagnosisDimensionSchema,
     resultQuantification: diagnosisDimensionSchema,
     productExpression: diagnosisDimensionSchema,
+    languageProfessionalism: diagnosisDimensionSchema,
     responsibilityCoverage: diagnosisDimensionSchema,
-    atsKeywordMatch: diagnosisDimensionSchema,
+    industryRelevance: diagnosisDimensionSchema,
     hardRequirementFit: diagnosisDimensionSchema
   }),
-  directEdits: z.array(directEditSchema).length(3),
-  needsUserInputEdits: z.array(needsUserInputEditSchema).length(3),
   summary: z.string()
 });
 
@@ -142,11 +221,19 @@ export const resumeBaselineReviewSchema = z.object({
 });
 
 export const resumeOptimizationOutputSchema = z.object({
-  optimizedResume: optimizedResumeSchema,
-  afterScores: scoreSummarySchema,
-  gapAnalysis: gapAnalysisSchema,
-  coverLetterTalkingPoints: z.array(z.string()).min(3).max(5),
-  summary: z.string()
+  optimizedResumeProfile: resumeProfileSchema,
+  optimizedDiagnosisScores: z.object({
+    structureClarity: optimizedDiagnosisDimensionSchema,
+    resultQuantification: optimizedDiagnosisDimensionSchema,
+    productExpression: optimizedDiagnosisDimensionSchema,
+    languageProfessionalism: optimizedDiagnosisDimensionSchema,
+    responsibilityCoverage: optimizedDiagnosisDimensionSchema,
+    industryRelevance: optimizedDiagnosisDimensionSchema,
+    hardRequirementFit: optimizedDiagnosisDimensionSchema
+  }),
+  strengths: z.array(z.string()).length(3),
+  gaps: z.array(optimizationGapItemSchema).length(3),
+  successPrediction: successPredictionSchema
 });
 
 export const resumeScoringSchema = z.object({
@@ -162,3 +249,4 @@ export type JobProfile = z.infer<typeof jobProfileSchema>;
 export type OptimizedResume = z.infer<typeof optimizedResumeSchema>;
 export type ResumeScoring = z.infer<typeof resumeScoringSchema>;
 export type ResumeDiagnosis = z.infer<typeof resumeDiagnosisSchema>;
+export type ResumeOptimizationOutput = z.infer<typeof resumeOptimizationOutputSchema>;

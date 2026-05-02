@@ -156,7 +156,7 @@ export default function ResumeResultPage() {
           AI简历优化结果
         </h1>
       </section>
-      <StepStrip steps={["上传简历与 JD", "AI 处理中", "结果页"]} active={2} />
+      <StepStrip steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]} active={2} />
 
       <section className="section form-stack">
         <ExpandableInfoBox

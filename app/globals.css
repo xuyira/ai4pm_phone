@@ -551,7 +551,7 @@ textarea {
 }
 
 .diagnosis-score-panel {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .score-card {
@@ -571,7 +571,7 @@ textarea {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
   padding: 0;
   border: 0;
@@ -602,6 +602,33 @@ textarea {
   font-size: 52px;
   font-weight: 800;
   line-height: 1;
+}
+
+.diagnosis-radar-card {
+  display: grid;
+  gap: 16px;
+}
+
+.diagnosis-total-score {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.diagnosis-score-pill {
+  margin-left: auto;
+}
+
+.diagnosis-toggle-icon {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  transition: transform 0.18s ease;
+}
+
+.diagnosis-toggle-icon.is-open {
+  transform: rotate(180deg);
 }
 
 .chart-box {

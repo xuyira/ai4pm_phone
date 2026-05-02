@@ -91,7 +91,7 @@ export default function ResumeDiagnosisLoadingPage() {
           AI简历诊断
         </h1>
       </section>
-      <StepStrip steps={["上传简历与 JD", "AI 简历诊断", "诊断结果"]} active={1} />
+      <StepStrip steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]} active={1} />
 
       <section className="section form-stack">
         <ExpandableInfoBox
