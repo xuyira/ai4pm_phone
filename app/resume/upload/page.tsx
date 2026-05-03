@@ -9,7 +9,7 @@ import { StepStrip } from "@/components/ui";
 export default function ResumeUploadPage() {
   const router = useRouter();
   const { push } = useToast();
-  const { resumeDraft, updateResumeDraft } = usePrototypeStore();
+  const { ensureResumeRecord, resumeDraft, updateResumeDraft } = usePrototypeStore();
 
   const handleStart = () => {
     if (!resumeDraft.extractedResume?.content.trim()) {
@@ -22,6 +22,7 @@ export default function ResumeUploadPage() {
       return;
     }
 
+    ensureResumeRecord("uploaded");
     router.push("/resume/diagnosis-loading");
   };
 

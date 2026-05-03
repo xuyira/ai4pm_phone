@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 import { usePrototypeStore } from "@/components/prototype-store";
-import { getFeatureLabel, type FeatureType } from "@/lib/prototype-data";
+import { getFeatureLabel, type FeatureType, type RecordItem } from "@/lib/prototype-data";
 
 function getEmptyText(type: FeatureType) {
   if (type === "positioning") {
@@ -22,10 +22,27 @@ function getEmptyText(type: FeatureType) {
 }
 
 export default function ProfileRecordListPage() {
+  const router = useRouter();
   const params = useParams<{ type: FeatureType }>();
   const type = params.type;
-  const { getRecordsByType } = usePrototypeStore();
+  const { deleteRecord, getRecordsByType } = usePrototypeStore();
   const items = getRecordsByType(type);
+
+  const getStatusCopy = (status: RecordItem["status"]) => {
+    if (status === "uploaded" || status === "diagnosing" || status === "diagnose_failed") {
+      return "已上传";
+    }
+
+    if (status === "diagnosed") {
+      return "已诊断";
+    }
+
+    if (status === "optimized" || status === "optimizing" || status === "optimize_failed") {
+      return "已优化";
+    }
+
+    return "已完成";
+  };
 
   return (
     <div>
@@ -43,22 +60,39 @@ export default function ProfileRecordListPage() {
         {items.length > 0 ? (
           <div className="list-card">
             {items.map((item) => (
-              <Link key={item.id} href={item.route} className="record-item">
-                <div className="record-meta">
-                  <span className="record-title">{item.title}</span>
-                  <span className="record-subtitle">{item.subtitle}</span>
-                  <span className="record-subtitle">{item.timestamp}</span>
+              <button
+                key={item.id}
+                type="button"
+                className="record-item profile-resume-row"
+                onClick={() => router.push(item.route)}
+              >
+                <div className="record-meta" style={{ minWidth: 0 }}>
+                  <span className="record-title" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {item.title}
+                  </span>
+                  <span className="record-subtitle">
+                    {item.timestamp.replace(/^(\d{4})\.(\d{2})\.(\d{2}) (\d{2}):(\d{2})$/, "$1年$2月$3日$4:$5")}
+                  </span>
                 </div>
-                <span
-                  className={`pill ${
-                    item.status === "pending_questions"
-                      ? "pill-pending"
-                      : "pill-done"
-                  }`}
-                >
-                  {item.status === "pending_questions" ? "待补充" : "已完成"}
-                </span>
-              </Link>
+                <div className="profile-resume-row-side">
+                  <button
+                    type="button"
+                    className="button-ghost profile-record-delete"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      deleteRecord(item.id);
+                      if (type === "resume") {
+                        router.refresh();
+                      }
+                    }}
+                  >
+                    删除
+                  </button>
+                  <span className={`pill ${item.status === "optimized" || item.status === "optimizing" || item.status === "optimize_failed" ? "pill-done" : "pill-pending"}`}>
+                    {getStatusCopy(item.status)}
+                  </span>
+                </div>
+              </button>
             ))}
           </div>
         ) : (

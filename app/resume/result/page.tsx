@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CompareScoreRadar } from "@/components/resume-analytics";
 import { usePrototypeStore } from "@/components/prototype-store";
 import { ExpandableInfoBox } from "@/components/interactive";
@@ -18,45 +19,57 @@ const dimensionMeta = [
   { key: "industryRelevance", label: "行业相关度" }
 ] as const;
 
-export default function ResumeResultPage() {
+function ResumeResultContent() {
   const router = useRouter();
-  const { resumeOptimization } = usePrototypeStore();
-  const [detailsExpanded, setDetailsExpanded] = useState(true);
+  const searchParams = useSearchParams();
+  const readonly = searchParams.get("readonly") === "1";
+  const recordId = searchParams.get("recordId");
+  const { getResumeRecord, resumeOptimization } = usePrototypeStore();
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [debugExpanded, setDebugExpanded] = useState(false);
+  const linkedRecord = recordId ? getResumeRecord(recordId) : undefined;
+  const optimization = linkedRecord?.optimization ?? resumeOptimization;
 
   useEffect(() => {
-    if (!resumeOptimization) {
+    if (!optimization) {
       router.replace("/resume/upload");
     }
-  }, [resumeOptimization, router]);
-
-  if (!resumeOptimization) {
-    return null;
-  }
+  }, [optimization, router]);
 
   const totalScore = useMemo(() => {
-    const values = dimensionMeta.map((item) => resumeOptimization.afterScores[item.key].finalScore);
+    if (!optimization) {
+      return 0;
+    }
+    const values = dimensionMeta.map((item) => optimization.afterScores[item.key].finalScore);
     return Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 10) / 10;
-  }, [resumeOptimization]);
+  }, [optimization]);
 
   const totalDelta = useMemo(() => {
-    const beforeValues = dimensionMeta.map((item) => resumeOptimization.beforeScores[item.key].score);
+    if (!optimization) {
+      return 0;
+    }
+    const beforeValues = dimensionMeta.map((item) => optimization.beforeScores[item.key].score);
     const beforeAverage = beforeValues.reduce((sum, value) => sum + value, 0) / beforeValues.length;
     return Math.round((totalScore - beforeAverage) * 10) / 10;
-  }, [resumeOptimization, totalScore]);
+  }, [optimization, totalScore]);
 
   const beforeRadar = dimensionMeta.map((item) => ({
     label: item.label,
-    value: resumeOptimization.beforeScores[item.key].score * 10
+    value: optimization?.beforeScores[item.key].score ? optimization.beforeScores[item.key].score * 10 : 0
   }));
 
   const afterRadar = dimensionMeta.map((item) => ({
     label: item.label,
-    value: resumeOptimization.afterScores[item.key].finalScore * 10
+    value: optimization?.afterScores[item.key].finalScore
+      ? optimization.afterScores[item.key].finalScore * 10
+      : 0
   }));
 
   const previewLines = useMemo(() => {
-    const profile = resumeOptimization.optimizedResumeProfile;
+    if (!optimization) {
+      return [];
+    }
+    const profile = optimization.optimizedResumeProfile;
     const lines: string[] = [];
 
     if (profile.basicInfo.name) {
@@ -147,14 +160,28 @@ export default function ResumeResultPage() {
     }
 
     return lines.filter(Boolean);
-  }, [resumeOptimization]);
+  }, [optimization]);
+
+  if (!optimization) {
+    return null;
+  }
 
   return (
     <div>
       <section className="section">
-        <h1 className="section-title" style={{ textAlign: "center" }}>
-          AI简历优化结果
-        </h1>
+        <div style={{ display: "grid", gridTemplateColumns: "32px 1fr 32px", alignItems: "center", gap: 8 }}>
+          <Link
+            href={readonly && recordId ? `/resume/diagnosis-result?recordId=${recordId}&readonly=1` : "/resume/diagnosis-result"}
+            className="button-ghost"
+            style={{ textAlign: "center", padding: 0 }}
+          >
+            &lt;
+          </Link>
+          <h1 className="section-title" style={{ textAlign: "center", margin: 0 }}>
+            AI简历优化结果
+          </h1>
+          <span />
+        </div>
       </section>
       <StepStrip steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]} active={2} />
 
@@ -185,7 +212,7 @@ export default function ResumeResultPage() {
           </button>
           {detailsExpanded
             ? dimensionMeta.map((item) => {
-                const detail = resumeOptimization.afterScores[item.key];
+                const detail = optimization.afterScores[item.key];
                 return (
                   <div key={item.key} className="soft-card">
                     <div className="record-title">{item.label}</div>
@@ -204,13 +231,47 @@ export default function ResumeResultPage() {
       </section>
 
       <section className="card section form-stack">
-        <div className="record-title">结构化简历</div>
-        <div className="preview-sheet rich-preview">
-          {previewLines.map((line, index) => (
-            <div key={`${line}-${index}`} className="record-subtitle rich-preview-line">
-              {line}
-            </div>
-          ))}
+        <div className="soft-card">
+          <div className="record-title">优化后简历</div>
+          <div className="preview-sheet rich-preview" style={{ marginTop: 10 }}>
+            {previewLines.map((line, index) => (
+              <div key={`${line}-${index}`} className="record-subtitle rich-preview-line">
+                {line}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="soft-card">
+          <div className="record-title">主要优势</div>
+          <div className="form-stack" style={{ marginTop: 10 }}>
+            {optimization.finalSummary.strengths.map((item, index) => (
+              <div key={`${item}-${index}`} className="record-subtitle">
+                {index + 1}. {item}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="soft-card">
+          <div className="record-title">主要风险</div>
+          <div className="form-stack" style={{ marginTop: 10 }}>
+            {optimization.finalSummary.gaps.map((item, index) => (
+              <div key={`${item}-${index}`} className="record-subtitle">
+                {index + 1}. {item}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="soft-card">
+          <div className="record-title">总结</div>
+          <div className="record-subtitle" style={{ marginTop: 8 }}>
+            当前简历投递成功率：{optimization.finalSummary.applicationCompetitiveness.level}
+          </div>
+          <div className="record-subtitle" style={{ marginTop: 14 }}>
+            {optimization.finalSummary.encouragement}
+          </div>
         </div>
       </section>
 
@@ -218,11 +279,19 @@ export default function ResumeResultPage() {
         <ExpandableInfoBox
           title="调试查看：优化模型完整输出"
           subtitle="用于核对大模型返回的全部结构化结果"
-          content={resumeOptimization.rawModelOutput}
+          content={optimization.rawModelOutput}
           isExpanded={debugExpanded}
           onToggle={setDebugExpanded}
         />
       </section>
     </div>
+  );
+}
+
+export default function ResumeResultPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResumeResultContent />
+    </Suspense>
   );
 }

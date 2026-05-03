@@ -56,13 +56,18 @@ export function buildResumeDiagnosisInstructions() {
 四、输出要求
 1. 必须输出 jobProfile，保留结构化岗位画像。
 2. 必须输出 resumeProfile，保留结构化简历文本。
-3. 必须输出 diagnosisScores，包含上述 8 个维度；每个维度都要给出 score、reason、improvement。
-4. score 使用 0-10 的整数。
-5. reason 必须直接引用简历文本中的内容作为证据，说明哪些内容支持或削弱了该评分。
-6. improvement 必须提出具体的修改意见或示例，说明如何提升该维度的评分。
-7. 总分不要单独输出，由前端取 8 个维度平均值。
-8. 在可能情况下优先复用 JD 原词来说明岗位要求（对于门槛达成度、职责覆盖度与行业相关度）。
-9. 产品经理表达应强调成果与影响，而不是流水账式职责罗列。
+3. 必须输出 quickSupplementQuestions，给出 3-5 条“为了进一步提升简历，请补充”的问题。
+4. 必须输出 diagnosisScores，包含上述 8 个维度；每个维度都要给出 score、reason、improvement、priority。
+5. priority 只能是 "high" | "medium" | "low"。
+6. high 表示这一维度明显影响当前岗位匹配或简历可读性，建议优先处理；medium 表示有较明显提升空间；low 表示可优化但不是当前最关键问题。
+7. score 使用 0-10 的整数。
+8. reason 必须直接引用简历文本中的内容作为证据，说明哪些内容支持或削弱了该评分。
+9. improvement 必须提出具体的修改意见或示例，说明如何提升该维度的评分。
+10. quickSupplementQuestions 应优先针对“补充后最可能明显提升简历质量与岗位匹配度”的缺失信息，例如：量化结果、真实产出物、实习时间、可到岗时间、相关经历、上线链接、用户反馈、项目规模等。
+11. quickSupplementQuestions 必须面向用户直接发问，问题简洁明确，并说明为什么要补。
+12. 总分不要单独输出，由前端取 8 个维度平均值。
+13. 在可能情况下优先复用 JD 原词来说明岗位要求（对于门槛达成度、职责覆盖度与行业相关度）。
+14. 产品经理表达应强调成果与影响，而不是流水账式职责罗列。
 
 五、输入信息说明
 - 你会收到：岗位标题、岗位类型、候选人备注、完整 JD 文本、完整简历文本、可选项目补充材料。
@@ -71,7 +76,8 @@ export function buildResumeDiagnosisInstructions() {
 六、输出字段说明
 - jobProfile：目标岗位的结构化画像。
 - resumeProfile：简历文本的结构化解析结果。
-- diagnosisScores：8个评分维度的结构化结果。
+- quickSupplementQuestions：建议用户优先补充的 3-5 条关键信息。
+- diagnosisScores：8个评分维度的结构化结果，每个维度包含 score、reason、improvement、priority。
 `.trim();
 }
 
@@ -102,9 +108,11 @@ ${input.originalResume}
 
 【输出要求再次强调】
 1. 只输出结构化诊断结果，不要输出解释性前言。
-2. 8个评分维度都必须返回 score、reason、improvement。
-3. score 范围为 0-10。
-4. 不要编造简历中没有出现的经历、数据、工具、奖项、语言、学历或项目结果。
+2. 必须返回 3-5 条 quickSupplementQuestions。
+3. 8个评分维度都必须返回 score、reason、improvement、priority。
+4. priority 只能是 "high" | "medium" | "low"。
+5. score 范围为 0-10。
+6. 不要编造简历中没有出现的经历、数据、工具、奖项、语言、学历或项目结果。
 `.trim();
 }
 
@@ -247,22 +255,10 @@ productExpression 的优化目标是把经历从“做了什么”改写为“�
 
 九、输出要求
 1. 必须输出 optimizedResumeProfile：优化后的结构化简历。
-2. 必须输出 changeLog：记录每一处实质性修改。
-3. 必须输出 unsupportedActions：记录无法安全执行的采纳建议。
-4. 必须输出 optimizedDiagnosisScores：优化后的8维结果。
-5. 必须输出 selfCheck：自检结果。
-6. 只输出结构化 JSON，不要输出前言、解释、markdown 或额外说明。
-
-changeLog 每一项必须包含：
-- dimension
-- targetSection
-- originalText
-- optimizedText
-- changeType：structure_adjustment / priority_refocus / product_logic_rewrite / wording_polish / jd_keyword_alignment / evidence_based_enhancement / unchanged
-- sourceEvidence
-- hasNewFact
-- hasNewNumber
-- safetyNote
+2. 必须输出 unsupportedActions：记录无法安全执行的采纳建议。
+3. 必须输出 optimizedDiagnosisScores：优化后的8维结果。
+4. 必须输出 finalSummary：总结性判断与建议。
+5. 只输出结构化 JSON，不要输出前言、解释、markdown 或额外说明。
 
 unsupportedActions 每一项必须包含：
 - dimension
@@ -280,21 +276,28 @@ optimizedDiagnosisScores 中每个维度的 reason 必须明确说明：
 - 这个维度实际修改了哪些内容；
 - 为什么这些修改能支撑该维度加分；
 - 如果没有实质修改，则必须说明保持不变或仅轻微润色；
-- 评分理由必须基于 optimizedResumeProfile 和 changeLog，不能基于 suggestion 示例。
+- 评分理由必须基于 optimizedResumeProfile，不能基于 suggestion 示例。
 
-selfCheck 必须包含：
-- hasFabricatedFact
-- hasFabricatedNumber
-- hasUnsupportedRequirementFilled
-- hasSuggestionUsedAsEvidence
-- hasOverstatedOwnership
-- hasJdCopiedAsResumeContent
+finalSummary 必须包含：
+- positioning：建议定位，用一句话概括这份简历最适合突出什么主线。
+- strengths：主要优势，固定输出3条，必须基于优化后的简历。
+- gaps：主要风险，固定输出3条，必须基于优化后的简历。
+- applicationCompetitiveness：包含 level 和 reason。level 用类似“较强 / 中等偏上 / 中等 / 较弱”的自然中文表达，不输出具体分数。
+- encouragement：总结，用更有鼓舞感、支持感的语气收尾，但必须基于真实优劣势，不能和 strengths / gaps 冲突。
+
+你还必须额外满足：
+1. 在 finalSummary 中增加对岗位匹配度的综合判断，重点解释为什么是这个 level。
+2. strengths、gaps、applicationCompetitiveness、encouragement 都必须基于优化后的简历，而不是原始简历。
+3. strengths 和 gaps 不允许表达重复或互相冲突。
+4. 如果匹配度偏高，reason 和 encouragement 要更多引用 strengths 中的证据；如果匹配度一般或偏低，reason 要更多引用 gaps 中的证据。
+5. positioning 应突出候选人最适合主打的产品方向或能力主线，例如 C 端工具产品、AI 产品、数据分析型 PM、技术理解型 PM 等，但只能基于优化后简历中真实存在的证据总结。
+6. encouragement 要比普通鼓励更有力量一些，可以自然加入“继续投”“别停下”“你很有潜力”“播种终会有回响”“加油”等表达，但不要空泛夸大，也不要脱离简历实际情况。
 
 十、风格要求
 1. 所有输出使用简体中文。
 2. 简历表述要职业、克制、清晰。
 3. 若某项岗位要求在简历与用户意见中都没有证据支持，不能偷偷补齐，只能保持原状或做保守表达优化。
-4. 所有评分理由都必须基于优化后的简历，而不是 suggestion 里的示例写法。
+4. 所有评分理由和总结判断都必须基于优化后的简历，而不是 suggestion 里的示例写法。
 `.trim();
 }
 
@@ -337,7 +340,7 @@ ${JSON.stringify(input.diagnosisActions, null, 2)}
 6. 不能编造任何原简历中没有的信息。
 7. 不能自行补充任何用户没有提供的数据；如果输入里没有数字，输出里也不能新造数字。
 8. suggestion 只是改写方向，不是事实证据；即使 suggestion 里出现了示例数字、示例成果，也不能直接写入优化后的简历。
-9. 请不要输出优势项、差距项、成功率，只输出优化后的结构化简历和8维评分提升结果。
+9. 必须输出 finalSummary，其中包含 strengths、gaps、applicationCompetitiveness、encouragement；不要遗漏这些总结字段。
 
 请严格按要求输出结构化结果。
 `.trim();

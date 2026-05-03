@@ -15,13 +15,15 @@ export default function ResumeLoadingPage() {
   const [resumeExpanded, setResumeExpanded] = useState(false);
   const [jobExpanded, setJobExpanded] = useState(false);
   const {
+    ensureResumeRecord,
     resumeDraft,
     resumeDiagnosis,
     resumeDiagnosisActions,
     resumeOptimization,
     resumeOptimizationStatus,
     setResumeOptimization,
-    setResumeOptimizationStatus
+    setResumeOptimizationStatus,
+    updateResumeRecordStatus
   } = usePrototypeStore();
   const hasStarted = useRef(false);
 
@@ -42,6 +44,8 @@ export default function ResumeLoadingPage() {
     }
 
     hasStarted.current = true;
+    ensureResumeRecord("optimizing");
+    updateResumeRecordStatus("optimizing", { diagnosisActions: resumeDiagnosisActions });
     setResumeOptimizationStatus("running");
 
     void fetch("/api/resume/optimize", {
@@ -72,9 +76,11 @@ export default function ResumeLoadingPage() {
         router.replace("/resume/result");
       })
       .catch((error: Error) => {
+        updateResumeRecordStatus("optimize_failed", { error: error.message });
         setResumeOptimizationStatus("failed", error.message);
       });
   }, [
+    ensureResumeRecord,
     push,
     resumeDiagnosis,
     resumeDiagnosisActions,
@@ -82,7 +88,8 @@ export default function ResumeLoadingPage() {
     resumeOptimizationStatus,
     router,
     setResumeOptimization,
-    setResumeOptimizationStatus
+    setResumeOptimizationStatus,
+    updateResumeRecordStatus
   ]);
 
   const fileName = resumeDraft.extractedResume?.filename ?? "已上传简历";

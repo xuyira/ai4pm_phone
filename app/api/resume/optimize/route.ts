@@ -93,9 +93,8 @@ export async function POST(request: Request) {
         optimizedResumeText: JSON.stringify(optimizationOutput.optimizedResumeProfile, null, 2),
         beforeScores: diagnosisScores,
         afterScores: optimizationOutput.optimizedDiagnosisScores,
-        changeLog: optimizationOutput.changeLog,
         unsupportedActions: optimizationOutput.unsupportedActions,
-        selfCheck: optimizationOutput.selfCheck,
+        finalSummary: optimizationOutput.finalSummary,
         rawModelOutput:
           optimizationResponse.output_text || JSON.stringify(optimizationOutput, null, 2)
       }

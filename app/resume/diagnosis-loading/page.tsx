@@ -15,12 +15,14 @@ export default function ResumeDiagnosisLoadingPage() {
   const [resumeExpanded, setResumeExpanded] = useState(false);
   const [jobExpanded, setJobExpanded] = useState(false);
   const {
+    ensureResumeRecord,
     resumeDraft,
     resumeDiagnosis,
     resumeDiagnosisError,
     resumeDiagnosisStatus,
     setResumeDiagnosis,
-    setResumeDiagnosisStatus
+    setResumeDiagnosisStatus,
+    updateResumeRecordStatus
   } = usePrototypeStore();
   const hasStarted = useRef(false);
 
@@ -41,6 +43,8 @@ export default function ResumeDiagnosisLoadingPage() {
     }
 
     hasStarted.current = true;
+    ensureResumeRecord("diagnosing");
+    updateResumeRecordStatus("diagnosing");
     setResumeDiagnosisStatus("running");
 
     void fetch("/api/resume/diagnose", {
@@ -67,9 +71,11 @@ export default function ResumeDiagnosisLoadingPage() {
         router.replace("/resume/diagnosis-result");
       })
       .catch((error: Error) => {
+        updateResumeRecordStatus("diagnose_failed", { error: error.message });
         setResumeDiagnosisStatus("failed", error.message);
       });
   }, [
+    ensureResumeRecord,
     push,
     resumeDiagnosis,
     resumeDiagnosisStatus,
@@ -81,6 +87,7 @@ export default function ResumeDiagnosisLoadingPage() {
     router,
     setResumeDiagnosis,
     setResumeDiagnosisStatus,
+    updateResumeRecordStatus,
     resumeDraft.projectMaterials
   ]);
 

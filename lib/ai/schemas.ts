@@ -10,7 +10,14 @@ const dimensionScoreSchema = z.object({
 const diagnosisDimensionSchema = z.object({
   score: z.number().min(0).max(10),
   reason: z.string(),
-  improvement: z.string()
+  improvement: z.string(),
+  priority: z.enum(["high", "medium", "low"])
+});
+
+const quickSupplementQuestionSchema = z.object({
+  id: z.string(),
+  question: z.string(),
+  whyAsk: z.string()
 });
 
 const resumeBasicInfoSchema = z.object({
@@ -120,26 +127,6 @@ const optimizedDiagnosisDimensionSchema = z.object({
   reason: z.string()
 });
 
-const optimizationChangeItemSchema = z.object({
-  dimension: z.string(),
-  targetSection: z.string(),
-  originalText: z.string(),
-  optimizedText: z.string(),
-  changeType: z.enum([
-    "structure_adjustment",
-    "priority_refocus",
-    "product_logic_rewrite",
-    "wording_polish",
-    "jd_keyword_alignment",
-    "evidence_based_enhancement",
-    "unchanged"
-  ]),
-  sourceEvidence: z.string(),
-  hasNewFact: z.boolean(),
-  hasNewNumber: z.boolean(),
-  safetyNote: z.string()
-});
-
 const unsupportedActionSchema = z.object({
   dimension: z.string(),
   suggestion: z.string(),
@@ -147,13 +134,15 @@ const unsupportedActionSchema = z.object({
   neededUserInput: z.string()
 });
 
-const optimizationSelfCheckSchema = z.object({
-  hasFabricatedFact: z.boolean(),
-  hasFabricatedNumber: z.boolean(),
-  hasUnsupportedRequirementFilled: z.boolean(),
-  hasSuggestionUsedAsEvidence: z.boolean(),
-  hasOverstatedOwnership: z.boolean(),
-  hasJdCopiedAsResumeContent: z.boolean()
+const finalSummarySchema = z.object({
+  positioning: z.string(),
+  strengths: z.array(z.string()).min(3).max(3),
+  gaps: z.array(z.string()).min(3).max(3),
+  applicationCompetitiveness: z.object({
+    level: z.string(),
+    reason: z.string()
+  }),
+  encouragement: z.string()
 });
 
 export const keywordGapItemSchema = z.object({
@@ -205,6 +194,7 @@ export const needsUserInputEditSchema = z.object({
 export const resumeDiagnosisSchema = z.object({
   jobProfile: jobProfileSchema,
   resumeProfile: resumeProfileSchema,
+  quickSupplementQuestions: z.array(quickSupplementQuestionSchema).min(3).max(5),
   diagnosisScores: z.object({
     structureClarity: diagnosisDimensionSchema,
     languageProfessionalism: diagnosisDimensionSchema,
@@ -248,7 +238,6 @@ export const resumeBaselineReviewSchema = z.object({
 
 export const resumeOptimizationOutputSchema = z.object({
   optimizedResumeProfile: resumeProfileSchema,
-  changeLog: z.array(optimizationChangeItemSchema),
   unsupportedActions: z.array(unsupportedActionSchema),
   optimizedDiagnosisScores: z.object({
     structureClarity: optimizedDiagnosisDimensionSchema,
@@ -260,7 +249,7 @@ export const resumeOptimizationOutputSchema = z.object({
     responsibilityCoverage: optimizedDiagnosisDimensionSchema,
     industryRelevance: optimizedDiagnosisDimensionSchema
   }),
-  selfCheck: optimizationSelfCheckSchema
+  finalSummary: finalSummarySchema
 });
 
 export const resumeScoringSchema = z.object({

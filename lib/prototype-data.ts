@@ -1,6 +1,13 @@
 export type FeatureType = "experience" | "resume" | "positioning" | "delivery" | "interview";
 export type ExperienceStatus = "pending_questions" | "completed";
-export type ResumeStatus = "completed";
+export type ResumeStatus =
+  | "uploaded"
+  | "diagnosing"
+  | "diagnosed"
+  | "optimizing"
+  | "optimized"
+  | "diagnose_failed"
+  | "optimize_failed";
 
 export type RecordItem = {
   id: string;
@@ -79,26 +86,6 @@ export const records: RecordItem[] = [
     status: "completed",
     route: "/profile/records/experience/exp-result-1",
     description: "最终经历库已保存，可继续复制、查看和沉淀项目表达。"
-  },
-  {
-    id: "resume-1",
-    type: "resume",
-    title: "腾讯产品策划",
-    subtitle: "校招/实习 · 优化后总分 84",
-    timestamp: "2026.04.29 21:05",
-    status: "completed",
-    route: "/profile/records/resume/resume-1",
-    description: "已完成一次完整优化，结果默认保存到云端。"
-  },
-  {
-    id: "resume-2",
-    type: "resume",
-    title: "字节跳动增长产品经理",
-    subtitle: "社招 · 优化后总分 81",
-    timestamp: "2026.04.22 19:15",
-    status: "completed",
-    route: "/profile/records/resume/resume-2",
-    description: "岗位匹配与表达清晰度均有提升。"
   }
 ];
 
