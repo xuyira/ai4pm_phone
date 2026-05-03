@@ -29,7 +29,17 @@ const quickSupplementQuestionSchema = z.object({
       "responsibilityCoverage",
       "industryRelevance"
     ])
-  ).min(1).max(2)
+  ).min(1).max(2),
+  relatedRequirement: z.string()
+});
+
+export const jdResumeEvidenceItemSchema = z.object({
+  requirement: z.string(),
+  requirementType: z.enum(["必需项", "核心职责", "加分项", "隐形信号"]),
+  resumeEvidence: z.string(),
+  matchType: z.enum(["strong", "partial", "transferable", "missing", "unsupported"]),
+  gap: z.string(),
+  supplementDirection: z.string()
 });
 
 const resumeBasicInfoSchema = z.object({
@@ -40,6 +50,7 @@ const resumeBasicInfoSchema = z.object({
 });
 
 const resumeJobIntentSchema = z.object({
+  targetRole: z.string().default(""),
   targetCity: z.string(),
   earliestStartDate: z.string(),
   internshipDuration: z.string(),
@@ -49,19 +60,20 @@ const resumeJobIntentSchema = z.object({
 const resumeEducationItemSchema = z.object({
   degree: z.string(),
   school: z.string(),
+  college: z.string(),
   startDate: z.string(),
   endDate: z.string(),
-  department: z.string(),
   major: z.string(),
-  gpa: z.string()
+  gpa: z.string(),
+  description: z.string()
 });
 
 const resumeExperienceItemSchema = z.object({
   company: z.string(),
-  title: z.string(),
+  position: z.string(),
   startDate: z.string(),
   endDate: z.string(),
-  description: z.string()
+  description: z.array(z.string())
 });
 
 const resumeProjectItemSchema = z.object({
@@ -69,20 +81,23 @@ const resumeProjectItemSchema = z.object({
   role: z.string(),
   startDate: z.string(),
   endDate: z.string(),
-  description: z.string()
+  description: z.array(z.string())
 });
 
 const resumeAchievementItemSchema = z.object({
   type: z.string(),
-  title: z.string(),
+  name: z.string(),
   date: z.string(),
   description: z.string()
 });
 
 const resumeSkillProfileSchema = z.object({
-  languageTests: z.array(z.string()),
-  programmingLanguages: z.array(z.string()),
-  aiSkills: z.array(z.string())
+  languages: z.array(z.string()),
+  tools: z.array(z.string()),
+  productSkills: z.array(z.string()),
+  technicalSkills: z.array(z.string()),
+  aiSkills: z.array(z.string()),
+  certificates: z.array(z.string())
 });
 
 export const resumeProfileSchema = z.object({
@@ -96,18 +111,14 @@ export const resumeProfileSchema = z.object({
 });
 
 export const jobProfileSchema = z.object({
-  targetTitle: z.string(),
-  jobTypeLabel: z.enum(["校招/实习", "社招"]),
-  seniority: z.string(),
+  roleTitle: z.string(),
+  roleType: z.string(),
+  industryScenario: z.array(z.string()).min(1).max(8),
   coreResponsibilities: z.array(z.string()).min(3).max(8),
-  mustHaveRequirements: z.array(z.string()).min(3).max(8),
-  preferredRequirements: z.array(z.string()).min(0).max(6),
-  keywords: z.array(z.string()).min(6).max(20),
-  industrySignals: z.array(z.string()).min(1).max(8),
-  productCapabilities: z.array(z.string()).min(4).max(10),
-  atsTerms: z.array(z.string()).min(6).max(20),
-  hardRequirements: z.array(z.string()).min(1).max(8),
-  summary: z.string()
+  requiredCapabilities: z.array(z.string()).min(3).max(8),
+  preferredCapabilities: z.array(z.string()).min(0).max(6),
+  toolsAndKeywords: z.array(z.string()).min(3).max(20),
+  hiddenSignals: z.array(z.string()).min(1).max(8)
 });
 
 export const structuredSectionSchema = z.object({
@@ -143,7 +154,7 @@ const optimizedDiagnosisDimensionSchema = z.object({
 const finalSummarySchema = z.object({
   strengths: z.array(z.string()).min(3).max(3),
   gaps: z.array(z.string()).min(3).max(3),
-  application_level: z.string(),
+  applicationLevel: z.enum(["较强", "中等偏上", "中等", "较弱"]),
   encouragement: z.string()
 });
 
@@ -195,6 +206,7 @@ export const needsUserInputEditSchema = z.object({
 
 export const resumeDiagnosisSchema = z.object({
   jobProfile: jobProfileSchema,
+  jdResumeEvidenceMatrix: z.array(jdResumeEvidenceItemSchema).min(5).max(8),
   quickSupplementQuestions: z.array(quickSupplementQuestionSchema).min(3).max(5),
   diagnosisScores: z.object({
     structureClarity: diagnosisDimensionSchema,
@@ -266,3 +278,4 @@ export type OptimizedResume = z.infer<typeof optimizedResumeSchema>;
 export type ResumeScoring = z.infer<typeof resumeScoringSchema>;
 export type ResumeDiagnosis = z.infer<typeof resumeDiagnosisSchema>;
 export type ResumeOptimizationOutput = z.infer<typeof resumeOptimizationOutputSchema>;
+export type JdResumeEvidenceItem = z.infer<typeof jdResumeEvidenceItemSchema>;

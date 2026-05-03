@@ -76,6 +76,7 @@ function ResumeResultContent() {
 
   const profile = optimization.optimizedResumeProfile;
   const intentItems = [
+    profile.jobIntent.targetRole ? `目标岗位：${profile.jobIntent.targetRole}` : "",
     profile.jobIntent.targetCity ? `目标城市：${profile.jobIntent.targetCity}` : "",
     profile.jobIntent.earliestStartDate ? `最早到岗：${profile.jobIntent.earliestStartDate}` : "",
     profile.jobIntent.internshipDuration ? `实习时长：${profile.jobIntent.internshipDuration}` : "",
@@ -83,9 +84,12 @@ function ResumeResultContent() {
   ].filter(Boolean);
 
   const skillItems = [
-    profile.skills.languageTests.length ? `语言：${profile.skills.languageTests.join(" / ")}` : "",
-    profile.skills.programmingLanguages.length ? `编程：${profile.skills.programmingLanguages.join(" / ")}` : "",
-    profile.skills.aiSkills.length ? `AI：${profile.skills.aiSkills.join(" / ")}` : ""
+    profile.skills.languages.length ? `语言：${profile.skills.languages.join(" / ")}` : "",
+    profile.skills.tools.length ? `工具：${profile.skills.tools.join(" / ")}` : "",
+    profile.skills.productSkills.length ? `产品：${profile.skills.productSkills.join(" / ")}` : "",
+    profile.skills.technicalSkills.length ? `技术：${profile.skills.technicalSkills.join(" / ")}` : "",
+    profile.skills.aiSkills.length ? `AI：${profile.skills.aiSkills.join(" / ")}` : "",
+    profile.skills.certificates.length ? `证书：${profile.skills.certificates.join(" / ")}` : ""
   ].filter(Boolean);
 
   const printableResumeHtml = useMemo(() => {
@@ -129,8 +133,9 @@ function ResumeResultContent() {
         time: `${item.startDate} - ${item.endDate}`,
         subtitle: [item.degree, item.major].filter(Boolean).join("｜"),
         text: [
-          item.department && item.department !== item.major ? `院系：${item.department}` : "",
-          item.gpa ? `GPA：${item.gpa}` : ""
+          item.college ? `学院：${item.college}` : "",
+          item.gpa ? `GPA：${item.gpa}` : "",
+          item.description
         ]
           .filter(Boolean)
           .join("\n")
@@ -141,8 +146,8 @@ function ResumeResultContent() {
       profile.workExperience.map((item) => ({
         title: item.company,
         time: `${item.startDate} - ${item.endDate}`,
-        subtitle: item.title,
-        text: item.description
+        subtitle: item.position,
+        text: item.description.join("\n")
       }))
     );
 
@@ -151,13 +156,13 @@ function ResumeResultContent() {
         title: item.projectName,
         time: `${item.startDate} - ${item.endDate}`,
         subtitle: item.role,
-        text: item.description
+        text: item.description.join("\n")
       }))
     );
 
     const achievementHtml = renderEntries(
       profile.achievements.map((item) => ({
-        title: item.title,
+        title: item.name,
         time: item.date,
         subtitle: item.type,
         text: item.description
@@ -443,7 +448,7 @@ function ResumeResultContent() {
         <div className="soft-card">
           <div className="record-title">总结</div>
           <div className="record-subtitle" style={{ marginTop: 8 }}>
-            当前简历投递成功率：{optimization.finalSummary.application_level}
+            当前简历投递成功率：{optimization.finalSummary.applicationLevel}
           </div>
           <div className="record-subtitle" style={{ marginTop: 14 }}>
             {optimization.finalSummary.encouragement}

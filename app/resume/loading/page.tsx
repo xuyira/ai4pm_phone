@@ -65,6 +65,7 @@ export default function ResumeLoadingPage() {
       },
       body: JSON.stringify({
         jobProfile: resumeDiagnosis.jobProfile,
+        jdResumeEvidenceMatrix: resumeDiagnosis.jdResumeEvidenceMatrix,
         originalJobDescription: resumeDraft.jobDescription,
         originalResumeText: resumeDraft.extractedResume?.content || "",
         diagnosisScores: resumeDiagnosis.diagnosisScores,

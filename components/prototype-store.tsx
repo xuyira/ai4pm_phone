@@ -146,6 +146,16 @@ export type ResumeQuickSupplementQuestion = {
   question: string;
   whyAsk: string;
   sourceDimensions: string[];
+  relatedRequirement: string;
+};
+
+export type ResumeJdResumeEvidenceItem = {
+  requirement: string;
+  requirementType: "必需项" | "核心职责" | "加分项" | "隐形信号";
+  resumeEvidence: string;
+  matchType: "strong" | "partial" | "transferable" | "missing" | "unsupported";
+  gap: string;
+  supplementDirection: string;
 };
 
 export type ResumeDiagnosisScores = {
@@ -162,7 +172,7 @@ export type ResumeDiagnosisScores = {
 export type ResumeOptimizationFinalSummary = {
   strengths: string[];
   gaps: string[];
-  application_level: string;
+  applicationLevel: "较强" | "中等偏上" | "中等" | "较弱";
   encouragement: string;
 };
 
@@ -174,6 +184,7 @@ export type ResumeProfileBasicInfo = {
 };
 
 export type ResumeProfileJobIntent = {
+  targetRole: string;
   targetCity: string;
   earliestStartDate: string;
   internshipDuration: string;
@@ -183,19 +194,20 @@ export type ResumeProfileJobIntent = {
 export type ResumeProfileEducationItem = {
   degree: string;
   school: string;
+  college: string;
   startDate: string;
   endDate: string;
-  department: string;
   major: string;
   gpa: string;
+  description: string;
 };
 
 export type ResumeProfileWorkItem = {
   company: string;
-  title: string;
+  position: string;
   startDate: string;
   endDate: string;
-  description: string;
+  description: string[];
 };
 
 export type ResumeProfileProjectItem = {
@@ -203,20 +215,23 @@ export type ResumeProfileProjectItem = {
   role: string;
   startDate: string;
   endDate: string;
-  description: string;
+  description: string[];
 };
 
 export type ResumeProfileAchievementItem = {
   type: string;
-  title: string;
+  name: string;
   date: string;
   description: string;
 };
 
 export type ResumeProfileSkills = {
-  languageTests: string[];
-  programmingLanguages: string[];
+  languages: string[];
+  tools: string[];
+  productSkills: string[];
+  technicalSkills: string[];
   aiSkills: string[];
+  certificates: string[];
 };
 
 export type ResumeProfile = {
@@ -231,19 +246,16 @@ export type ResumeProfile = {
 
 export type ResumeDiagnosisResult = {
   jobProfile: {
-    targetTitle: string;
-    jobTypeLabel: "校招/实习" | "社招";
-    seniority: string;
+    roleTitle: string;
+    roleType: string;
+    industryScenario: string[];
     coreResponsibilities: string[];
-    mustHaveRequirements: string[];
-    preferredRequirements: string[];
-    keywords: string[];
-    industrySignals: string[];
-    productCapabilities: string[];
-    atsTerms: string[];
-    hardRequirements: string[];
-    summary: string;
+    requiredCapabilities: string[];
+    preferredCapabilities: string[];
+    toolsAndKeywords: string[];
+    hiddenSignals: string[];
   };
+  jdResumeEvidenceMatrix: ResumeJdResumeEvidenceItem[];
   quickSupplementQuestions: ResumeQuickSupplementQuestion[];
   diagnosisScores: ResumeDiagnosisScores;
   summary: string;
@@ -251,20 +263,8 @@ export type ResumeDiagnosisResult = {
 };
 
 export type ResumeOptimizationResult = {
-  jobProfile: {
-    targetTitle: string;
-    jobTypeLabel: "校招/实习" | "社招";
-    seniority: string;
-    coreResponsibilities: string[];
-    mustHaveRequirements: string[];
-    preferredRequirements: string[];
-    keywords: string[];
-    industrySignals: string[];
-    productCapabilities: string[];
-    atsTerms: string[];
-    hardRequirements: string[];
-    summary: string;
-  };
+  jobProfile: ResumeDiagnosisResult["jobProfile"];
+  jdResumeEvidenceMatrix: ResumeJdResumeEvidenceItem[];
   optimizedResumeProfile: ResumeProfile;
   optimizedResumeText: string;
   beforeScores: ResumeDiagnosisScores;
@@ -777,6 +777,7 @@ export function PrototypeStoreProvider({
       diagnosis:
         existingRecord?.diagnosis || resumeDiagnosis || ({
           jobProfile: result.jobProfile,
+          jdResumeEvidenceMatrix: result.jdResumeEvidenceMatrix,
           quickSupplementQuestions: [],
           diagnosisScores: result.beforeScores,
           summary: "",
