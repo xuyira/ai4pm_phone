@@ -36,7 +36,6 @@ export type ResumeDraft = {
 
 export type ResumeDiagnosisActionInput = {
   dimension: string;
-  adopted: boolean;
   userComment: string;
 };
 

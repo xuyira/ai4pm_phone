@@ -237,23 +237,23 @@ export function buildResumeOptimizationInstructions() {
 - originalJobDescription：原始 JD 文本
 - originalResumeText：原始简历文本
 - diagnosisScores：原始 8 维诊断结果，包含 score、reason、improvement、priority
+- diagnosisActions：用户针对 8 维建议的补充意见
 - quickSupplementQuestions：补充问题，包含 question、whyAsk、sourceDimensions、relatedRequirement
 - quickSupplementAnswers：用户对补充问题的回答
 
 注意：
 - diagnosisScores.improvement 是优化方向，不是事实证据。
 - JD 和 jobProfile 只能用于岗位对齐、内容排序、关键词自然融入，不能伪装成候选人经历。
-- quickSupplementAnswers 只有在明确补充真实事实时，才可作为新增事实来源。
+- diagnosisActions 和 quickSupplementAnswers 只有在明确补充真实事实时，才可作为新增事实来源。
 
 # 二、事实安全规则
 
-1. 只能基于 originalResumeText 和 quickSupplementAnswers 中明确出现的事实优化简历。
+1. 只能基于 originalResumeText、diagnosisActions 和 quickSupplementAnswers 中明确出现的事实优化简历。
 2. 不得编造经历、数字、职责、工具、证书、语言、学历、行业背景、奖项、项目成果。
-3. 不得把 JD 要求、诊断建议、示例表达、推测内容写成候选人真实经历。
-4. 只有原简历或用户补充中明确出现的数字、比例、时长、规模、结果，才允许写入优化后简历。
-5. 如果某项优化建议缺少事实支撑，只能做保守表达优化、排序调整或弱化处理。
-6. 可以复用 JD 原词，但必须自然、克制，不能关键词堆砌。
-7. 不得把“参与/协助/支持”包装成“主导/负责全流程/独立完成”，除非原文或用户补充明确支持。
+3. 严禁自行创造任何数据。只有原简历或用户补充中明确出现的数字、比例、时长、规模、结果，才允许写入优化后简历。
+4. diagnosisScores.improvement 中的示例表达、示例数字、示例成果不能当作候选人真实经历。
+5. 如果某项建议缺少事实支撑，只能进行保守表达优化。
+6. 可以自然复用 JD 原词，但不得硬搬 JD，也不得把 JD 要求（如地点、部门等）伪装成候选人经历。
 
 # 三、优化依据
 
@@ -261,7 +261,7 @@ export function buildResumeOptimizationInstructions() {
 
 1. 建立事实池：
    - 提取 originalResumeText 中可写入简历的事实；
-   - 提取 quickSupplementAnswers 中明确补充的新事实；
+   - 提取 diagnosisActions 和 quickSupplementAnswers 中明确补充的新事实；
    - 排除表达模糊、无法验证、没有明确归属的信息。
 
 2. 明确岗位主线：
@@ -275,8 +275,8 @@ export function buildResumeOptimizationInstructions() {
    - improvement 只作为优化方向，不能作为事实来源。
 
 4. 使用用户补充：
-   - quickSupplementAnswers 若补充了真实事实，可写入对应经历；
-   - 若只是意愿、偏好或不确定表述，只能用于求职意向、排序、取舍或风险提示，不能写成经历成果。
+   - diagnosisActions 和 quickSupplementAnswers 若补充了真实事实，可写入对应经历；
+   - 若只是意见、偏好或不确定表述，只能用于排序、取舍、风险提示或表达优化，不能写成经历成果。
 
 # 四、优化策略
 
@@ -315,8 +315,8 @@ export function buildResumeOptimizationInstructions() {
    - email
 
 2. jobIntent：求职意向
-   - targetRole
-   - targetCity
+   - targetRole，如果用户没有明确说明，可采用岗位标题
+   - targetCity，如果用户没有明确说明，不要默认写成 JD 中的城市，可不填写
    - earliestStartDate
    - internshipDuration
    - weeklyAvailability
@@ -362,6 +362,8 @@ export function buildResumeOptimizationInstructions() {
 字段缺失时：
 - 原简历和用户补充均未体现的信息，填空字符串 "" 或空数组 []。
 - 不要用“未体现”“无”“暂无”填充简历字段。
+- 有真实数据则结构化呈现；没有真实数据则使用保守、可验证的产出表达；
+- 不得写入任何无事实支撑的信息，JD内容和优化建议均不可直接写成简历内容。
 
 # 六、optimizedDiagnosisScores 评分规则
 
@@ -462,6 +464,10 @@ export function buildResumeOptimizationPrompt(input: {
   originalJobDescription: string;
   originalResumeText: string;
   diagnosisScores: Record<string, unknown>;
+  diagnosisActions?: Array<{
+    dimension: string;
+    userComment: string;
+  }>;
   quickSupplementQuestions?: Array<{
     id: string;
     question: string;
@@ -487,6 +493,9 @@ ${input.originalResumeText}
 
 【原始 8 维诊断结果】
 ${JSON.stringify(input.diagnosisScores, null, 2)}
+
+【用户对 8 维建议的补充意见】
+${JSON.stringify(input.diagnosisActions || [], null, 2)}
 
 【核心快速补充问题】
 ${JSON.stringify(input.quickSupplementQuestions || [], null, 2)}
@@ -514,10 +523,11 @@ ${JSON.stringify(input.quickSupplementAnswers || {}, null, 2)}
    - jobProfile
    - jdResumeEvidenceMatrix
    - diagnosisScores.improvement
+   - diagnosisActions.userComment
    - quickSupplementQuestions.sourceDimensions
    - quickSupplementAnswers
-7. quickSupplementAnswers 只有在明确提供真实事实时，才可作为新增事实来源。
-8. diagnosisScores.improvement 只是优化方向，不是事实证据。
+7. diagnosisActions 和 quickSupplementAnswers 只有在明确提供真实事实时，才可作为新增事实来源。
+8. diagnosisScores.improvement 和 JD 内容、简历证据矩阵只是优化方向，不是事实证据。
 9. 不得编造原简历和用户补充中没有的信息。
 10. 不得自行补充任何数字、比例、规模、结果、工具、证书、语言、学历、行业背景或项目成果。
 `.trim();

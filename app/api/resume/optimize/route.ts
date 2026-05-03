@@ -21,6 +21,10 @@ type OptimizeRequest = {
   originalJobDescription: string;
   originalResumeText: string;
   diagnosisScores: unknown;
+  diagnosisActions?: Array<{
+    dimension: string;
+    userComment: string;
+  }>;
   quickSupplementQuestions?: Array<{
     id: string;
     question: string;
@@ -65,6 +69,12 @@ export async function POST(request: Request) {
     const diagnosisScores = body.diagnosisScores
       ? resumeDiagnosisSchema.shape.diagnosisScores.parse(body.diagnosisScores)
       : null;
+    const diagnosisActions = Array.isArray(body.diagnosisActions)
+      ? body.diagnosisActions.map((item) => ({
+          dimension: typeof item.dimension === "string" ? item.dimension : "",
+          userComment: typeof item.userComment === "string" ? item.userComment : ""
+        }))
+      : [];
     const quickSupplementQuestions = body.quickSupplementQuestions
       ? resumeDiagnosisSchema.shape.quickSupplementQuestions.parse(body.quickSupplementQuestions)
       : [];
@@ -85,6 +95,7 @@ export async function POST(request: Request) {
         originalJobDescription,
         originalResumeText,
         diagnosisScores,
+        diagnosisActions,
         quickSupplementQuestions,
         quickSupplementAnswers
       }),

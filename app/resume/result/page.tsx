@@ -183,12 +183,12 @@ function ResumeResultContent() {
               color: #2f2924;
             }
             .pdf-page {
-              width: 210mm;
-              min-height: 297mm;
-              margin: 0 auto;
+              width: 100%;
+              min-height: 100vh;
+              margin: 0;
               background: #fffdf9;
               box-sizing: border-box;
-              padding: 18mm 16mm;
+              padding: 24px;
             }
             .pdf-header {
               border-bottom: 1px solid #d9cbb8;
@@ -265,8 +265,9 @@ function ResumeResultContent() {
               }
               .pdf-page {
                 margin: 0;
-                width: 100%;
-                min-height: auto;
+                width: 210mm;
+                min-height: 297mm;
+                padding: 18mm 16mm;
               }
             }
           </style>
@@ -404,14 +405,34 @@ function ResumeResultContent() {
 
       <section className="card section form-stack">
         <div className="soft-card">
-          <div className="record-title">优化后简历</div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
-            <button type="button" className="button-secondary" onClick={handleExportHtml}>
-              导出HTML
-            </button>
-            <button type="button" className="button-secondary" onClick={handleExportPdf}>
-              导出PDF
-            </button>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              flexWrap: "wrap"
+            }}
+          >
+            <div className="record-title">优化后简历</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={handleExportHtml}
+                style={{ fontSize: 12, padding: "6px 10px" }}
+              >
+                导出HTML
+              </button>
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={handleExportPdf}
+                style={{ fontSize: 12, padding: "6px 10px" }}
+              >
+                导出PDF
+              </button>
+            </div>
           </div>
           <div className="resume-pdf-frame" style={{ marginTop: 12 }}>
             <iframe

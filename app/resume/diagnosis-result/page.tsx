@@ -43,6 +43,8 @@ function ResumeDiagnosisResultContent() {
     getResumeRecord,
     resumeDraft,
     resumeDiagnosis,
+    resumeDiagnosisActions,
+    setResumeDiagnosisActions,
     resumeQuickSupplementAnswers,
     setResumeQuickSupplementAnswers
   } = usePrototypeStore();
@@ -54,6 +56,7 @@ function ResumeDiagnosisResultContent() {
   const linkedRecord = recordId ? getResumeRecord(recordId) : undefined;
   const diagnosis = linkedRecord?.diagnosis ?? resumeDiagnosis;
   const pageDraft = linkedRecord?.draft ?? resumeDraft;
+  const savedDiagnosisActions = linkedRecord?.diagnosisActions ?? resumeDiagnosisActions;
   const savedQuickAnswers = linkedRecord?.quickSupplementAnswers ?? resumeQuickSupplementAnswers;
   const visibleQuickQuestions = diagnosis?.quickSupplementQuestions ?? [];
 
@@ -88,6 +91,28 @@ function ResumeDiagnosisResultContent() {
       ...current,
       [key]: !current[key]
     }));
+  };
+
+  const getDiagnosisActionComment = (dimension: string) =>
+    savedDiagnosisActions.find((item) => item.dimension === dimension)?.userComment || "";
+
+  const updateDiagnosisActionComment = (dimension: string, userComment: string) => {
+    const nextActions = [...savedDiagnosisActions];
+    const targetIndex = nextActions.findIndex((item) => item.dimension === dimension);
+
+    if (targetIndex >= 0) {
+      nextActions[targetIndex] = {
+        ...nextActions[targetIndex],
+        userComment
+      };
+    } else {
+      nextActions.push({
+        dimension,
+        userComment
+      });
+    }
+
+    setResumeDiagnosisActions(nextActions);
   };
 
   const handleStartOptimization = () => {
@@ -191,6 +216,25 @@ function ResumeDiagnosisResultContent() {
                     <div className="form-stack" style={{ marginTop: 12 }}>
                       <div className="record-subtitle">评分理由：{detail.reason}</div>
                       <div className="record-subtitle">优化建议：{detail.improvement}</div>
+                      {readonly ? (
+                        <div
+                          className="record-subtitle"
+                          style={{ whiteSpace: "pre-wrap", marginTop: 4 }}
+                        >
+                          {getDiagnosisActionComment(item.key) || "未填写"}
+                        </div>
+                      ) : (
+                        <textarea
+                          className="textarea"
+                          rows={1}
+                          placeholder="可填写你的意见或补充信息"
+                          value={getDiagnosisActionComment(item.key)}
+                          onChange={(event) =>
+                            updateDiagnosisActionComment(item.key, event.target.value)
+                          }
+                          style={{ minHeight: 40, resize: "vertical" }}
+                        />
+                      )}
                     </div>
                   </div>
                 );

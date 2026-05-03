@@ -18,6 +18,7 @@ export default function ResumeLoadingPage() {
     ensureResumeRecord,
     resumeDraft,
     resumeDiagnosis,
+    resumeDiagnosisActions,
     resumeQuickSupplementAnswers,
     resumeOptimization,
     resumeOptimizationStatus,
@@ -69,6 +70,7 @@ export default function ResumeLoadingPage() {
         originalJobDescription: resumeDraft.jobDescription,
         originalResumeText: resumeDraft.extractedResume?.content || "",
         diagnosisScores: resumeDiagnosis.diagnosisScores,
+        diagnosisActions: resumeDiagnosisActions,
         quickSupplementQuestions: resumeDiagnosis.quickSupplementQuestions,
         quickSupplementAnswers: resumeQuickSupplementAnswers,
       })
@@ -92,6 +94,7 @@ export default function ResumeLoadingPage() {
     ensureResumeRecord,
     push,
     resumeDiagnosis,
+    resumeDiagnosisActions,
     resumeQuickSupplementAnswers,
     resumeOptimization,
     resumeOptimizationStatus,
