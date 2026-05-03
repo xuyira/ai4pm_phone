@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
     const client = getOpenAIClient();
     const diagnosisResponse = await client.responses.parse({
-      model: "gpt-5.4-mini",
+      model: "gpt-5.4-nano",
       instructions: buildResumeDiagnosisInstructions(),
       input: buildResumeDiagnosisPrompt({
         jobTitle,

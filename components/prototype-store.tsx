@@ -419,6 +419,10 @@ function cloneDraft(draft: ResumeDraft): ResumeDraft {
   return JSON.parse(JSON.stringify(draft)) as ResumeDraft;
 }
 
+function shouldKeepDraftBoundRecord(status?: ResumeRecordStatus) {
+  return status === "uploaded" || status === "diagnosing" || status === "diagnose_failed";
+}
+
 function buildResumeRecordItem(record: ResumeFlowRecord): RecordItem {
   return {
     id: record.id,
@@ -631,11 +635,35 @@ export function PrototypeStoreProvider({
   );
 
   const updateResumeDraft = useCallback((patch: Partial<ResumeDraft>) => {
-    setCurrentResumeRecordId(null);
-    setResumeDraft((current) => ({
-      ...current,
+    const existingRecord = currentResumeRecordId
+      ? resumeRecords.find((item) => item.id === currentResumeRecordId)
+      : undefined;
+    const shouldKeepRecord = shouldKeepDraftBoundRecord(existingRecord?.status);
+    const nextDraft = {
+      ...resumeDraft,
       ...patch
-    }));
+    };
+
+    if (!shouldKeepRecord) {
+      setCurrentResumeRecordId(null);
+    }
+
+    setResumeDraft(nextDraft);
+    if (existingRecord && shouldKeepRecord) {
+      upsertResumeRecord({
+        ...existingRecord,
+        status: "uploaded",
+        updatedAt: Date.now(),
+        jobTitle: nextDraft.jobTitle.trim() || existingRecord.jobTitle,
+        title: nextDraft.jobTitle.trim() || existingRecord.title || "历史记录",
+        draft: cloneDraft(nextDraft),
+        diagnosis: null,
+        diagnosisActions: [],
+        quickSupplementAnswers: {},
+        optimization: null,
+        lastError: null
+      });
+    }
     setResumeDiagnosisState(null);
     setResumeDiagnosisActionsState([]);
     setResumeQuickSupplementAnswersState({});
@@ -644,14 +672,38 @@ export function PrototypeStoreProvider({
     setResumeOptimizationState(null);
     setResumeOptimizationStatusState("idle");
     setResumeOptimizationError(null);
-  }, []);
+  }, [currentResumeRecordId, resumeDraft, resumeRecords, upsertResumeRecord]);
 
   const setResumeExtraction = useCallback((extraction: ResumeExtraction) => {
-    setCurrentResumeRecordId(null);
-    setResumeDraft((current) => ({
-      ...current,
+    const now = Date.now();
+    const existingRecord = currentResumeRecordId
+      ? resumeRecords.find((item) => item.id === currentResumeRecordId)
+      : undefined;
+    const shouldKeepRecord = shouldKeepDraftBoundRecord(existingRecord?.status);
+    const recordId =
+      shouldKeepRecord && existingRecord ? existingRecord.id : `resume-${now}`;
+    const nextDraft = {
+      ...resumeDraft,
       extractedResume: extraction
-    }));
+    };
+
+    setCurrentResumeRecordId(recordId);
+    setResumeDraft(nextDraft);
+    upsertResumeRecord({
+      id: recordId,
+      type: "resume",
+      jobTitle: nextDraft.jobTitle.trim() || existingRecord?.jobTitle || "",
+      title: nextDraft.jobTitle.trim() || existingRecord?.title || "历史记录",
+      timestamp: existingRecord?.timestamp || formatTimestamp(new Date(now)),
+      updatedAt: now,
+      status: "uploaded",
+      draft: cloneDraft(nextDraft),
+      diagnosis: null,
+      diagnosisActions: [],
+      quickSupplementAnswers: {},
+      optimization: null,
+      lastError: null
+    });
     setResumeDiagnosisState(null);
     setResumeDiagnosisActionsState([]);
     setResumeQuickSupplementAnswersState({});
@@ -660,14 +712,36 @@ export function PrototypeStoreProvider({
     setResumeOptimizationState(null);
     setResumeOptimizationStatusState("idle");
     setResumeOptimizationError(null);
-  }, []);
+  }, [currentResumeRecordId, resumeDraft, resumeRecords, upsertResumeRecord]);
 
   const setProjectMaterials = useCallback((materials: ResumeExtraction) => {
-    setCurrentResumeRecordId(null);
-    setResumeDraft((current) => ({
-      ...current,
+    const existingRecord = currentResumeRecordId
+      ? resumeRecords.find((item) => item.id === currentResumeRecordId)
+      : undefined;
+    const shouldKeepRecord = shouldKeepDraftBoundRecord(existingRecord?.status);
+    const nextDraft = {
+      ...resumeDraft,
       projectMaterials: materials
-    }));
+    };
+
+    if (!shouldKeepRecord) {
+      setCurrentResumeRecordId(null);
+    }
+
+    setResumeDraft(nextDraft);
+    if (existingRecord && shouldKeepRecord) {
+      upsertResumeRecord({
+        ...existingRecord,
+        status: "uploaded",
+        updatedAt: Date.now(),
+        draft: cloneDraft(nextDraft),
+        diagnosis: null,
+        diagnosisActions: [],
+        quickSupplementAnswers: {},
+        optimization: null,
+        lastError: null
+      });
+    }
     setResumeDiagnosisState(null);
     setResumeDiagnosisActionsState([]);
     setResumeDiagnosisStatusState("idle");
@@ -675,7 +749,7 @@ export function PrototypeStoreProvider({
     setResumeOptimizationState(null);
     setResumeOptimizationStatusState("idle");
     setResumeOptimizationError(null);
-  }, []);
+  }, [currentResumeRecordId, resumeDraft, resumeRecords, upsertResumeRecord]);
 
   const setResumeDiagnosis = useCallback((result: ResumeDiagnosisResult) => {
     const now = Date.now();

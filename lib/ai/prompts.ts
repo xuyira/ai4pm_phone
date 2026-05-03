@@ -350,6 +350,10 @@ export function buildResumeOptimizationInstructions() {
    - name
    - date
    - description
+   - 仅收录可独立成章的奖项、荣誉、证书、竞赛结果、论文发表、资格认证、专利、公开演讲/展示等明确成果
+   - 不要把 projectExperience 或 workExperience 里已经描述过的项目内容、项目职责、项目结果再次写入 achievements
+   - 不要创建“项目成果”“项目落地”“原型落地”这类本质上只是项目经历摘要的条目
+   - 如果没有独立的成果与荣誉，必须输出 []
 
 7. skills：技能信息
    - languages
@@ -530,5 +534,9 @@ ${JSON.stringify(input.quickSupplementAnswers || {}, null, 2)}
 8. diagnosisScores.improvement 和 JD 内容、简历证据矩阵只是优化方向，不是事实证据。
 9. 不得编造原简历和用户补充中没有的信息。
 10. 不得自行补充任何数字、比例、规模、结果、工具、证书、语言、学历、行业背景或项目成果。
+11. achievements 必须与 workExperience / projectExperience 去重：
+   - 不能把同一个项目换个标题后再次写进 achievements
+   - 不能把“项目成果”从项目 bullet 中抽出后单独生成 achievements 条目
+   - 只有当原简历或用户补充里明确存在独立奖项/荣誉/证书/竞赛/论文/专利时，才能写入 achievements
 `.trim();
 }

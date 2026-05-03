@@ -99,7 +99,23 @@ function ResumeResultContent() {
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;");
+    const normalizeText = (value: string) => value.replace(/\r\n/g, "\n").trim();
+    const isPlaceholderText = (value: string) => {
+      const normalized = normalizeText(value).replace(/[•·▪▫◦\-—–_]/g, "").trim();
+      return !normalized;
+    };
+    const cleanText = (value?: string) => {
+      if (!value) {
+        return "";
+      }
+      return isPlaceholderText(value) ? "" : normalizeText(value);
+    };
     const renderText = (value: string) => escapeHtml(value).replaceAll("\n", "<br/>");
+    const removeGpaFromDescription = (value: string) =>
+      value
+        .replace(/[；;，,、\s]*GPA[：:\s]*\d+(?:\.\d+)?\s*\/\s*\d+(?:\.\d+)?[；;，,、\s]*/gi, " ")
+        .replace(/^[；;，,、\s]+|[；;，,、\s]+$/g, "")
+        .replace(/\s{2,}/g, " ");
     const renderSection = (title: string, body: string) =>
       body
         ? `<section class="pdf-section"><div class="pdf-section-title">${escapeHtml(title)}</div>${body}</section>`
@@ -113,17 +129,33 @@ function ResumeResultContent() {
       }>
     ) =>
       items
+        .filter((item) => {
+          const title = cleanText(item.title);
+          const time = cleanText(item.time);
+          const subtitle = cleanText(item.subtitle);
+          const text = cleanText(item.text);
+          return Boolean(title || time || subtitle || text);
+        })
         .map(
-          (item) => `
+          (item) => {
+            const title = cleanText(item.title);
+            const time = cleanText(item.time);
+            const subtitle = cleanText(item.subtitle);
+            const text = cleanText(item.text);
+
+            return `
             <div class="pdf-entry">
+              ${title || time ? `
               <div class="pdf-entry-head">
-                <div class="pdf-entry-title">${escapeHtml(item.title)}</div>
-                <div class="pdf-entry-time">${escapeHtml(item.time)}</div>
+                <div class="pdf-entry-title">${escapeHtml(title)}</div>
+                <div class="pdf-entry-time">${escapeHtml(time)}</div>
               </div>
-              ${item.subtitle ? `<div class="pdf-entry-subtitle">${escapeHtml(item.subtitle)}</div>` : ""}
-              ${item.text ? `<div class="pdf-entry-text">${renderText(item.text)}</div>` : ""}
+              ` : ""}
+              ${subtitle ? `<div class="pdf-entry-subtitle">${escapeHtml(subtitle)}</div>` : ""}
+              ${text ? `<div class="pdf-entry-text">${renderText(text)}</div>` : ""}
             </div>
           `
+          }
         )
         .join("");
 
@@ -135,7 +167,7 @@ function ResumeResultContent() {
         text: [
           item.college ? `学院：${item.college}` : "",
           item.gpa ? `GPA：${item.gpa}` : "",
-          item.description
+          removeGpaFromDescription(item.description)
         ]
           .filter(Boolean)
           .join("\n")
@@ -147,7 +179,7 @@ function ResumeResultContent() {
         title: item.company,
         time: `${item.startDate} - ${item.endDate}`,
         subtitle: item.position,
-        text: item.description.join("\n")
+        text: item.description.filter((line) => !isPlaceholderText(line)).join("\n")
       }))
     );
 
@@ -156,7 +188,7 @@ function ResumeResultContent() {
         title: item.projectName,
         time: `${item.startDate} - ${item.endDate}`,
         subtitle: item.role,
-        text: item.description.join("\n")
+        text: item.description.filter((line) => !isPlaceholderText(line)).join("\n")
       }))
     );
 
