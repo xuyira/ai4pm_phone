@@ -160,13 +160,9 @@ export type ResumeDiagnosisScores = {
 };
 
 export type ResumeOptimizationFinalSummary = {
-  positioning: string;
   strengths: string[];
   gaps: string[];
-  applicationCompetitiveness: {
-    level: string;
-    reason: string;
-  };
+  application_level: string;
   encouragement: string;
 };
 
@@ -210,10 +206,11 @@ export type ResumeProfileProjectItem = {
   description: string;
 };
 
-export type ResumeProfileAwardItem = {
-  awardType: string;
-  awardName: string;
-  awardDate: string;
+export type ResumeProfileAchievementItem = {
+  type: string;
+  title: string;
+  date: string;
+  description: string;
 };
 
 export type ResumeProfileSkills = {
@@ -228,7 +225,7 @@ export type ResumeProfile = {
   education: ResumeProfileEducationItem[];
   workExperience: ResumeProfileWorkItem[];
   projectExperience: ResumeProfileProjectItem[];
-  awards: ResumeProfileAwardItem[];
+  achievements: ResumeProfileAchievementItem[];
   skills: ResumeProfileSkills;
 };
 
@@ -247,7 +244,6 @@ export type ResumeDiagnosisResult = {
     hardRequirements: string[];
     summary: string;
   };
-  resumeProfile: ResumeProfile;
   quickSupplementQuestions: ResumeQuickSupplementQuestion[];
   diagnosisScores: ResumeDiagnosisScores;
   summary: string;
@@ -781,7 +777,7 @@ export function PrototypeStoreProvider({
       diagnosis:
         existingRecord?.diagnosis || resumeDiagnosis || ({
           jobProfile: result.jobProfile,
-          resumeProfile: result.optimizedResumeProfile,
+          quickSupplementQuestions: [],
           diagnosisScores: result.beforeScores,
           summary: "",
           rawModelOutput: ""

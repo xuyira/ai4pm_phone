@@ -88,7 +88,15 @@ export default function ProfileRecordListPage() {
                   >
                     删除
                   </button>
-                  <span className={`pill ${item.status === "optimized" || item.status === "optimizing" || item.status === "optimize_failed" ? "pill-done" : "pill-pending"}`}>
+                  <span
+                    className={`pill ${
+                      item.status === "optimized" || item.status === "optimizing" || item.status === "optimize_failed"
+                        ? "pill-status-optimized"
+                        : item.status === "diagnosed"
+                          ? "pill-status-diagnosed"
+                          : "pill-status-uploaded"
+                    }`}
+                  >
                     {getStatusCopy(item.status)}
                   </span>
                 </div>

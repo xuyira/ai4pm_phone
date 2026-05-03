@@ -548,6 +548,21 @@ textarea {
   color: #61745a;
 }
 
+.pill-status-uploaded {
+  background: rgba(222, 211, 190, 0.95);
+  color: #7a6653;
+}
+
+.pill-status-diagnosed {
+  background: rgba(244, 222, 176, 0.96);
+  color: #8f6428;
+}
+
+.pill-status-optimized {
+  background: rgba(215, 225, 209, 0.96);
+  color: #61745a;
+}
+
 .priority-pill-high {
   background: #d94b43;
   color: #fffaf7;
@@ -781,6 +796,117 @@ textarea {
 .rich-preview-line {
   white-space: pre-wrap;
   line-height: 1.65;
+}
+
+.resume-paper {
+  background: #fffdf9;
+  border: 1px solid rgba(217, 205, 186, 0.88);
+  border-radius: 18px;
+  padding: 24px 22px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+
+.resume-pdf-frame {
+  width: 100%;
+  aspect-ratio: 210 / 297;
+  max-height: calc(100vh - 220px);
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(217, 205, 186, 0.88);
+  background: #f2ece2;
+}
+
+.resume-pdf-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #f2ece2;
+}
+
+.resume-paper-header {
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(201, 187, 166, 0.58);
+}
+
+.resume-paper-name {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.1;
+  font-weight: 800;
+  color: #2f2924;
+}
+
+.resume-paper-contact {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: #5c5148;
+  font-size: 13px;
+}
+
+.resume-paper-section {
+  margin-top: 18px;
+}
+
+.resume-paper-section-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #3a322c;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(214, 199, 175, 0.72);
+}
+
+.resume-paper-inline-list {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 13px;
+  color: #4c433c;
+}
+
+.resume-paper-stack {
+  display: grid;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.resume-paper-entry {
+  display: grid;
+  gap: 6px;
+}
+
+.resume-paper-entry-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.resume-paper-entry-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2f2924;
+}
+
+.resume-paper-entry-time {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #7c6d60;
+}
+
+.resume-paper-entry-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4d433a;
+}
+
+.resume-paper-entry-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #4b433b;
+  white-space: pre-wrap;
 }
 
 .preview-line {

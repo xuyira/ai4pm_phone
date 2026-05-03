@@ -29,7 +29,7 @@ const quickSupplementQuestionSchema = z.object({
       "responsibilityCoverage",
       "industryRelevance"
     ])
-  ).min(1).max(3)
+  ).min(1).max(2)
 });
 
 const resumeBasicInfoSchema = z.object({
@@ -72,10 +72,11 @@ const resumeProjectItemSchema = z.object({
   description: z.string()
 });
 
-const resumeAwardItemSchema = z.object({
-  awardType: z.string(),
-  awardName: z.string(),
-  awardDate: z.string()
+const resumeAchievementItemSchema = z.object({
+  type: z.string(),
+  title: z.string(),
+  date: z.string(),
+  description: z.string()
 });
 
 const resumeSkillProfileSchema = z.object({
@@ -90,7 +91,7 @@ export const resumeProfileSchema = z.object({
   education: z.array(resumeEducationItemSchema),
   workExperience: z.array(resumeExperienceItemSchema),
   projectExperience: z.array(resumeProjectItemSchema),
-  awards: z.array(resumeAwardItemSchema),
+  achievements: z.array(resumeAchievementItemSchema),
   skills: resumeSkillProfileSchema
 });
 
@@ -140,13 +141,9 @@ const optimizedDiagnosisDimensionSchema = z.object({
 });
 
 const finalSummarySchema = z.object({
-  positioning: z.string(),
   strengths: z.array(z.string()).min(3).max(3),
   gaps: z.array(z.string()).min(3).max(3),
-  applicationCompetitiveness: z.object({
-    level: z.string(),
-    reason: z.string()
-  }),
+  application_level: z.string(),
   encouragement: z.string()
 });
 
@@ -198,7 +195,6 @@ export const needsUserInputEditSchema = z.object({
 
 export const resumeDiagnosisSchema = z.object({
   jobProfile: jobProfileSchema,
-  resumeProfile: resumeProfileSchema,
   quickSupplementQuestions: z.array(quickSupplementQuestionSchema).min(3).max(5),
   diagnosisScores: z.object({
     structureClarity: diagnosisDimensionSchema,

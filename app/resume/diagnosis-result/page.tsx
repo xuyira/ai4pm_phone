@@ -14,7 +14,7 @@ const dimensionMeta = [
   { key: "priorityFocus", label: "重点突出度" },
   { key: "productExpression", label: "产品逻辑度" },
   { key: "resultQuantification", label: "指标量化度" },
-  { key: "hardRequirementFit", label: "门槛达成度" },
+  { key: "hardRequirementFit", label: "要求达成度" },
   { key: "responsibilityCoverage", label: "职责覆盖度" },
   { key: "industryRelevance", label: "行业相关度" }
 ] as const;
@@ -300,7 +300,7 @@ function ResumeDiagnosisResultContent() {
       {!readonly ? (
         <section className="section">
           <button type="button" className="button" onClick={handleStartOptimization}>
-            开始简历优化
+            开始AI简历优化
           </button>
         </section>
       ) : null}

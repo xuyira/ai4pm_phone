@@ -8,8 +8,7 @@ import {
 import {
   jobProfileSchema,
   resumeDiagnosisSchema,
-  resumeOptimizationOutputSchema,
-  resumeProfileSchema
+  resumeOptimizationOutputSchema
 } from "@/lib/ai/schemas";
 
 export const runtime = "nodejs";
@@ -17,7 +16,8 @@ export const maxDuration = 60;
 
 type OptimizeRequest = {
   jobProfile: unknown;
-  resumeProfile: unknown;
+  originalJobDescription: string;
+  originalResumeText: string;
   diagnosisScores: unknown;
   quickSupplementQuestions?: Array<{
     id: string;
@@ -55,7 +55,8 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Partial<OptimizeRequest>;
     const jobProfile = body.jobProfile ? jobProfileSchema.parse(body.jobProfile) : null;
-    const resumeProfile = body.resumeProfile ? resumeProfileSchema.parse(body.resumeProfile) : null;
+    const originalJobDescription = body.originalJobDescription?.trim() ?? "";
+    const originalResumeText = body.originalResumeText?.trim() ?? "";
     const diagnosisScores = body.diagnosisScores
       ? resumeDiagnosisSchema.shape.diagnosisScores.parse(body.diagnosisScores)
       : null;
@@ -64,8 +65,8 @@ export async function POST(request: Request) {
       : [];
     const quickSupplementAnswers = body.quickSupplementAnswers ?? {};
 
-    if (!jobProfile || !resumeProfile || !diagnosisScores) {
-      return NextResponse.json({ detail: "缺少第二节点的结构化诊断结果。" }, { status: 400 });
+    if (!jobProfile || !diagnosisScores || !originalResumeText) {
+      return NextResponse.json({ detail: "缺少第二阶段简历优化所需信息。" }, { status: 400 });
     }
 
     const client = getOpenAIClient();
@@ -75,7 +76,8 @@ export async function POST(request: Request) {
       instructions: buildResumeOptimizationInstructions(),
       input: buildResumeOptimizationPrompt({
         jobProfile,
-        resumeProfile,
+        originalJobDescription,
+        originalResumeText,
         diagnosisScores,
         quickSupplementQuestions,
         quickSupplementAnswers
