@@ -87,7 +87,7 @@ export async function POST(request: Request) {
     const client = getOpenAIClient();
 
     const optimizationResponse = await client.responses.parse({
-      model: "gpt-5.4-nano",
+      model: "gpt-5.4-mini",
       instructions: buildResumeOptimizationInstructions(),
       input: buildResumeOptimizationPrompt({
         jobProfile,

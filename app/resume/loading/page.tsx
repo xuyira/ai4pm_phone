@@ -4,7 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { usePrototypeStore } from "@/components/prototype-store";
+import {
+  type ResumeOptimizationResult,
+  usePrototypeStore
+} from "@/components/prototype-store";
 import { useToast } from "@/components/toast";
 import { StepStrip } from "@/components/ui";
 import { ExpandableInfoBox } from "@/components/interactive";
@@ -76,9 +79,26 @@ export default function ResumeLoadingPage() {
       })
     })
       .then(async (response) => {
-        const payload = await response.json();
+        const rawText = await response.text();
+        let payload: { detail?: string; result?: ResumeOptimizationResult } = {};
+
+        if (rawText) {
+          try {
+            payload = JSON.parse(rawText) as {
+              detail?: string;
+              result?: ResumeOptimizationResult;
+            };
+          } catch {
+            payload = { detail: rawText };
+          }
+        }
+
         if (!response.ok) {
           throw new Error(payload.detail ?? "简历优化失败");
+        }
+
+        if (!payload.result) {
+          throw new Error(payload.detail ?? "简历优化失败：服务端未返回结果。");
         }
 
         setResumeOptimization(payload.result);

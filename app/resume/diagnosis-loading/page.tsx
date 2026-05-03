@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { ExpandableInfoBox } from "@/components/interactive";
-import { usePrototypeStore } from "@/components/prototype-store";
+import {
+  type ResumeDiagnosisResult,
+  usePrototypeStore
+} from "@/components/prototype-store";
 import { useToast } from "@/components/toast";
 import { StepStrip } from "@/components/ui";
 
@@ -72,9 +75,26 @@ export default function ResumeDiagnosisLoadingPage() {
       })
     })
       .then(async (response) => {
-        const payload = await response.json();
+        const rawText = await response.text();
+        let payload: { detail?: string; result?: ResumeDiagnosisResult } = {};
+
+        if (rawText) {
+          try {
+            payload = JSON.parse(rawText) as {
+              detail?: string;
+              result?: ResumeDiagnosisResult;
+            };
+          } catch {
+            payload = { detail: rawText };
+          }
+        }
+
         if (!response.ok) {
           throw new Error(payload.detail ?? "简历诊断失败");
+        }
+
+        if (!payload.result) {
+          throw new Error(payload.detail ?? "简历诊断失败：服务端未返回结果。");
         }
 
         setResumeDiagnosis(payload.result);
