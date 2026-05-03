@@ -18,7 +18,7 @@ export default function ResumeLoadingPage() {
     ensureResumeRecord,
     resumeDraft,
     resumeDiagnosis,
-    resumeDiagnosisActions,
+    resumeQuickSupplementAnswers,
     resumeOptimization,
     resumeOptimizationStatus,
     setResumeOptimization,
@@ -26,10 +26,20 @@ export default function ResumeLoadingPage() {
     updateResumeRecordStatus
   } = usePrototypeStore();
   const hasStarted = useRef(false);
+  const isActive = useRef(true);
+
+  useEffect(() => {
+    isActive.current = true;
+    return () => {
+      isActive.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (resumeOptimization) {
-      router.replace("/resume/result");
+      if (isActive.current) {
+        router.replace("/resume/result");
+      }
       return;
     }
 
@@ -45,7 +55,7 @@ export default function ResumeLoadingPage() {
 
     hasStarted.current = true;
     ensureResumeRecord("optimizing");
-    updateResumeRecordStatus("optimizing", { diagnosisActions: resumeDiagnosisActions });
+    updateResumeRecordStatus("optimizing");
     setResumeOptimizationStatus("running");
 
     void fetch("/api/resume/optimize", {
@@ -57,13 +67,8 @@ export default function ResumeLoadingPage() {
         jobProfile: resumeDiagnosis.jobProfile,
         resumeProfile: resumeDiagnosis.resumeProfile,
         diagnosisScores: resumeDiagnosis.diagnosisScores,
-        diagnosisActions: resumeDiagnosisActions.map((item) => ({
-          ...item,
-          suggestion:
-            resumeDiagnosis.diagnosisScores[
-              item.dimension as keyof typeof resumeDiagnosis.diagnosisScores
-            ]?.improvement || ""
-        }))
+        quickSupplementQuestions: resumeDiagnosis.quickSupplementQuestions,
+        quickSupplementAnswers: resumeQuickSupplementAnswers,
       })
     })
       .then(async (response) => {
@@ -73,7 +78,9 @@ export default function ResumeLoadingPage() {
         }
 
         setResumeOptimization(payload.result);
-        router.replace("/resume/result");
+        if (isActive.current) {
+          router.replace("/resume/result");
+        }
       })
       .catch((error: Error) => {
         updateResumeRecordStatus("optimize_failed", { error: error.message });
@@ -83,7 +90,7 @@ export default function ResumeLoadingPage() {
     ensureResumeRecord,
     push,
     resumeDiagnosis,
-    resumeDiagnosisActions,
+    resumeQuickSupplementAnswers,
     resumeOptimization,
     resumeOptimizationStatus,
     router,

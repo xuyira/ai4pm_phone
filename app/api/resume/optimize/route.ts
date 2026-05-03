@@ -19,12 +19,13 @@ type OptimizeRequest = {
   jobProfile: unknown;
   resumeProfile: unknown;
   diagnosisScores: unknown;
-  diagnosisActions: Array<{
-    dimension: string;
-    suggestion: string;
-    adopted: boolean;
-    userComment: string;
+  quickSupplementQuestions?: Array<{
+    id: string;
+    question: string;
+    whyAsk: string;
+    sourceDimensions: string[];
   }>;
+  quickSupplementAnswers?: Record<string, string>;
 };
 
 function buildErrorMessage(error: unknown) {
@@ -58,7 +59,10 @@ export async function POST(request: Request) {
     const diagnosisScores = body.diagnosisScores
       ? resumeDiagnosisSchema.shape.diagnosisScores.parse(body.diagnosisScores)
       : null;
-    const diagnosisActions = body.diagnosisActions ?? [];
+    const quickSupplementQuestions = body.quickSupplementQuestions
+      ? resumeDiagnosisSchema.shape.quickSupplementQuestions.parse(body.quickSupplementQuestions)
+      : [];
+    const quickSupplementAnswers = body.quickSupplementAnswers ?? {};
 
     if (!jobProfile || !resumeProfile || !diagnosisScores) {
       return NextResponse.json({ detail: "缺少第二节点的结构化诊断结果。" }, { status: 400 });
@@ -73,7 +77,8 @@ export async function POST(request: Request) {
         jobProfile,
         resumeProfile,
         diagnosisScores,
-        diagnosisActions
+        quickSupplementQuestions,
+        quickSupplementAnswers
       }),
       text: {
         format: zodTextFormat(resumeOptimizationOutputSchema, "resume_optimization_output")
@@ -93,7 +98,6 @@ export async function POST(request: Request) {
         optimizedResumeText: JSON.stringify(optimizationOutput.optimizedResumeProfile, null, 2),
         beforeScores: diagnosisScores,
         afterScores: optimizationOutput.optimizedDiagnosisScores,
-        unsupportedActions: optimizationOutput.unsupportedActions,
         finalSummary: optimizationOutput.finalSummary,
         rawModelOutput:
           optimizationResponse.output_text || JSON.stringify(optimizationOutput, null, 2)

@@ -491,14 +491,17 @@ textarea {
   border: 0;
   background: transparent;
   cursor: pointer;
+  align-items: stretch;
 }
 
 .profile-resume-row-side {
   display: grid;
   justify-items: end;
-  align-content: space-between;
+  grid-template-rows: 1fr 1fr;
+  align-items: center;
   gap: 10px;
   flex-shrink: 0;
+  min-width: 74px;
 }
 
 .profile-record-delete {
@@ -510,6 +513,8 @@ textarea {
 
 .record-meta {
   display: grid;
+  grid-template-rows: 1fr 1fr;
+  align-items: center;
   gap: 4px;
 }
 
@@ -621,6 +626,22 @@ textarea {
 .diagnosis-question-title {
   font-size: 14px;
   line-height: 1.45;
+}
+
+.diagnosis-dimension-toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px 88px 20px;
+  align-items: center;
+  column-gap: 10px;
+}
+
+.diagnosis-dimension-name {
+  min-width: 0;
+}
+
+.diagnosis-dimension-score {
+  text-align: center;
+  white-space: nowrap;
 }
 
 .diagnosis-choice-row {

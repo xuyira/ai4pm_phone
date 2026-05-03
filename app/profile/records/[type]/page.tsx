@@ -52,7 +52,7 @@ export default function ProfileRecordListPage() {
           {getFeatureLabel(type)}记录
         </h1>
         <p className="page-subtitle" style={{ marginTop: 0 }}>
-          按时间倒序展示。点击后进入对应结果页，支持从详情中删除记录。
+          按时间倒序展示，点击即可进入对应结果页。
         </p>
       </section>
 
@@ -97,8 +97,7 @@ export default function ProfileRecordListPage() {
           </div>
         ) : (
           <div className="empty-state">
-            <h2 className="section-title">还没有可查看的记录</h2>
-            <p className="page-subtitle">{getEmptyText(type)}</p>
+            <p className="record-subtitle">还没有可查看的记录</p>
           </div>
         )}
       </section>

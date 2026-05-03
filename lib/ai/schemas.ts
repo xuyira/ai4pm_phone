@@ -17,7 +17,19 @@ const diagnosisDimensionSchema = z.object({
 const quickSupplementQuestionSchema = z.object({
   id: z.string(),
   question: z.string(),
-  whyAsk: z.string()
+  whyAsk: z.string(),
+  sourceDimensions: z.array(
+    z.enum([
+      "structureClarity",
+      "languageProfessionalism",
+      "priorityFocus",
+      "productExpression",
+      "resultQuantification",
+      "hardRequirementFit",
+      "responsibilityCoverage",
+      "industryRelevance"
+    ])
+  ).min(1).max(3)
 });
 
 const resumeBasicInfoSchema = z.object({
@@ -127,13 +139,6 @@ const optimizedDiagnosisDimensionSchema = z.object({
   reason: z.string()
 });
 
-const unsupportedActionSchema = z.object({
-  dimension: z.string(),
-  suggestion: z.string(),
-  reason: z.string(),
-  neededUserInput: z.string()
-});
-
 const finalSummarySchema = z.object({
   positioning: z.string(),
   strengths: z.array(z.string()).min(3).max(3),
@@ -238,7 +243,6 @@ export const resumeBaselineReviewSchema = z.object({
 
 export const resumeOptimizationOutputSchema = z.object({
   optimizedResumeProfile: resumeProfileSchema,
-  unsupportedActions: z.array(unsupportedActionSchema),
   optimizedDiagnosisScores: z.object({
     structureClarity: optimizedDiagnosisDimensionSchema,
     languageProfessionalism: optimizedDiagnosisDimensionSchema,

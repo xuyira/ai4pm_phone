@@ -18,6 +18,7 @@ const dimensionMeta = [
   { key: "responsibilityCoverage", label: "职责覆盖度" },
   { key: "industryRelevance", label: "行业相关度" }
 ] as const;
+const dimensionLabelMap = Object.fromEntries(dimensionMeta.map((item) => [item.key, item.label])) as Record<string, string>;
 
 type DimensionKey = (typeof dimensionMeta)[number]["key"];
 type PriorityLevel = "high" | "medium" | "low";
@@ -43,28 +44,18 @@ function ResumeDiagnosisResultContent() {
     resumeDraft,
     resumeDiagnosis,
     resumeQuickSupplementAnswers,
-    setResumeDiagnosisActions,
     setResumeQuickSupplementAnswers
   } = usePrototypeStore();
   const [resumeExpanded, setResumeExpanded] = useState(false);
   const [jobExpanded, setJobExpanded] = useState(false);
-  const [debugExpanded, setDebugExpanded] = useState(false);
   const [quickSectionExpanded, setQuickSectionExpanded] = useState(true);
-  const [detailSectionExpanded, setDetailSectionExpanded] = useState(true);
+  const [detailSectionExpanded, setDetailSectionExpanded] = useState(false);
   const [quickExpanded, setQuickExpanded] = useState<Record<string, boolean>>({});
-  const [openCards, setOpenCards] = useState<Record<string, boolean>>({});
   const linkedRecord = recordId ? getResumeRecord(recordId) : undefined;
   const diagnosis = linkedRecord?.diagnosis ?? resumeDiagnosis;
   const pageDraft = linkedRecord?.draft ?? resumeDraft;
   const savedQuickAnswers = linkedRecord?.quickSupplementAnswers ?? resumeQuickSupplementAnswers;
-  const [adoptionState, setAdoptionState] = useState<Record<string, "yes" | "no">>(() =>
-    Object.fromEntries(dimensionMeta.map((item) => [item.key, "yes"]))
-  );
-  const [userComments, setUserComments] = useState<Record<string, string>>(() =>
-    linkedRecord?.diagnosisActions.length
-      ? Object.fromEntries(linkedRecord.diagnosisActions.map((item) => [item.dimension, item.userComment]))
-      : {}
-  );
+  const visibleQuickQuestions = diagnosis?.quickSupplementQuestions ?? [];
 
   const totalScore = useMemo(() => {
     if (!diagnosis) {
@@ -92,13 +83,6 @@ function ResumeDiagnosisResultContent() {
       })
     : dimensionMeta;
 
-  const toggleCard = (key: DimensionKey) => {
-    setOpenCards((current) => ({
-      ...current,
-      [key]: !current[key]
-    }));
-  };
-
   const toggleQuick = (key: string) => {
     setQuickExpanded((current) => ({
       ...current,
@@ -111,22 +95,7 @@ function ResumeDiagnosisResultContent() {
       return;
     }
 
-    const supplementComment = diagnosis.quickSupplementQuestions
-      .map((question) => {
-        const answer = (savedQuickAnswers[question.id] || "").trim();
-        return answer ? `${question.question}\n用户补充：${answer}` : "";
-      })
-      .filter(Boolean)
-      .join("\n\n");
-
     setResumeQuickSupplementAnswers(savedQuickAnswers);
-    setResumeDiagnosisActions(
-      dimensionMeta.map((item) => ({
-        dimension: item.key,
-        adopted: adoptionState[item.key] === "yes",
-        userComment: [userComments[item.key] || "", supplementComment].filter(Boolean).join("\n\n")
-      }))
-    );
     router.push("/resume/loading");
   };
 
@@ -135,16 +104,23 @@ function ResumeDiagnosisResultContent() {
     return null;
   }
 
-  const readonlyActions = Object.fromEntries(
-    (linkedRecord?.diagnosisActions || []).map((item) => [item.dimension, item])
-  );
   const canViewOptimization = readonly && linkedRecord?.optimization;
 
   return (
     <div>
       <section className="section">
         <div style={{ display: "grid", gridTemplateColumns: "32px 1fr 32px", alignItems: "center", gap: 8 }}>
-          <span />
+          {readonly && recordId ? (
+            <Link
+              href="/profile/records/resume"
+              className="button-ghost"
+              style={{ textAlign: "center", padding: 0 }}
+            >
+              &lt;
+            </Link>
+          ) : (
+            <span />
+          )}
           <h1 className="section-title" style={{ textAlign: "center", margin: 0 }}>
             AI简历诊断结果
           </h1>
@@ -195,13 +171,44 @@ function ResumeDiagnosisResultContent() {
           <button
             type="button"
             className="diagnosis-card-toggle"
+            onClick={() => setDetailSectionExpanded((current) => !current)}
+          >
+            <span className="record-title">8维详细建议</span>
+            <span className={`diagnosis-toggle-icon${detailSectionExpanded ? " is-open" : ""}`}>▾</span>
+          </button>
+          {detailSectionExpanded
+            ? sortedDimensions.map((item) => {
+                const detail = diagnosis.diagnosisScores[item.key];
+                const priority = priorityMeta[detail.priority];
+
+                return (
+                  <div key={item.key} className="soft-card">
+                    <div className="diagnosis-card-toggle diagnosis-dimension-toggle">
+                      <span className="record-title diagnosis-dimension-name">{item.label}</span>
+                      <span className="record-subtitle diagnosis-dimension-score">{detail.score}分</span>
+                      <span className={`pill ${priority.className}`}>{priority.label}</span>
+                    </div>
+                    <div className="form-stack" style={{ marginTop: 12 }}>
+                      <div className="record-subtitle">评分理由：{detail.reason}</div>
+                      <div className="record-subtitle">优化建议：{detail.improvement}</div>
+                    </div>
+                  </div>
+                );
+              })
+            : null}
+        </div>
+
+        <div className="card form-stack">
+          <button
+            type="button"
+            className="diagnosis-card-toggle"
             onClick={() => setQuickSectionExpanded((current) => !current)}
           >
-            <span className="record-title">快速补充</span>
+            <span className="record-title">核心快速补充</span>
             <span className={`diagnosis-toggle-icon${quickSectionExpanded ? " is-open" : ""}`}>▾</span>
           </button>
           {quickSectionExpanded
-            ? diagnosis.quickSupplementQuestions.map((question, index) => {
+            ? visibleQuickQuestions.map((question, index) => {
                 const isOpen = quickExpanded[question.id];
                 const savedAnswer = savedQuickAnswers[question.id] || "";
                 return (
@@ -218,9 +225,12 @@ function ResumeDiagnosisResultContent() {
                     </button>
                     {isOpen ? (
                       <div className="form-stack" style={{ marginTop: 12 }}>
+                        <div className="record-subtitle">
+                          提升维度：{question.sourceDimensions.map((key) => dimensionLabelMap[key] || key).join("、")}
+                        </div>
                         <div className="record-subtitle">补充原因：{question.whyAsk}</div>
                         <div>
-                          <label className="field-label">{readonly ? "已填写补充" : "你的补充"}</label>
+                          <label className="field-label">你的补充</label>
                           {readonly ? (
                             <div className="record-subtitle" style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>
                               {savedAnswer || "未填写"}
@@ -246,114 +256,45 @@ function ResumeDiagnosisResultContent() {
                 );
               })
             : null}
-        </div>
-
-        <div className="card form-stack">
-          <button
-            type="button"
-            className="diagnosis-card-toggle"
-            onClick={() => setDetailSectionExpanded((current) => !current)}
-          >
-            <span className="record-title">详细补充</span>
-            <span className={`diagnosis-toggle-icon${detailSectionExpanded ? " is-open" : ""}`}>▾</span>
-          </button>
-          {detailSectionExpanded
-            ? sortedDimensions.map((item) => {
-                const detail = diagnosis.diagnosisScores[item.key];
-                const isOpen = openCards[item.key];
-                const savedAction = readonlyActions[item.key];
-                const priority = priorityMeta[detail.priority];
-
-                return (
-                  <div key={item.key} className="soft-card">
-                    <button
-                      type="button"
-                      className="diagnosis-card-toggle"
-                      onClick={() => toggleCard(item.key)}
-                    >
-                      <span className="record-title">{item.label}</span>
-                      <span className="record-subtitle">{detail.score}分</span>
-                      <span className={`pill ${priority.className}`}>{priority.label}</span>
-                      <span className={`diagnosis-toggle-icon${isOpen ? " is-open" : ""}`}>▾</span>
-                    </button>
-                    {isOpen ? (
-                      <div className="form-stack" style={{ marginTop: 12 }}>
-                        <div className="record-subtitle">评分标准：{item.label}</div>
-                        <div className="record-subtitle">分数：{detail.score}</div>
-                        <div className="record-subtitle">优先级：{priorityTextMeta[detail.priority]}</div>
-                        <div className="record-subtitle">评分理由：{detail.reason}</div>
-                        <div className="record-subtitle">优化建议：{detail.improvement}</div>
-                        {readonly ? (
-                          <>
-                            <div className="field-label">是否采纳</div>
-                            <div className="record-subtitle">{savedAction?.adopted ? "是" : "否"}</div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="field-label">是否采纳</div>
-                            <div className="diagnosis-choice-row">
-                              <button
-                                type="button"
-                                className={`chip-button${adoptionState[item.key] === "yes" ? " is-active" : ""}`}
-                                onClick={() =>
-                                  setAdoptionState((current) => ({
-                                    ...current,
-                                    [item.key]: "yes"
-                                  }))
-                                }
-                              >
-                                是
-                              </button>
-                              <button
-                                type="button"
-                                className={`chip-button${adoptionState[item.key] === "no" ? " is-active" : ""}`}
-                                onClick={() =>
-                                  setAdoptionState((current) => ({
-                                    ...current,
-                                    [item.key]: "no"
-                                  }))
-                                }
-                              >
-                                否
-                              </button>
-                            </div>
-                          </>
-                        )}
-                        <div>
-                          <label className="field-label">{readonly ? "已填写意见" : "你的意见"}</label>
-                          {readonly ? (
-                            <div className="record-subtitle" style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>
-                              {savedAction?.userComment?.trim() || "未填写"}
-                            </div>
-                          ) : (
-                            <textarea
-                              className="textarea"
-                              rows={4}
-                              placeholder="可补充你想强调的内容或修改要求..."
-                              value={userComments[item.key] || ""}
-                              onChange={(event) =>
-                                setUserComments((current) => ({
-                                  ...current,
-                                  [item.key]: event.target.value
-                                }))
-                              }
-                            />
-                          )}
-                        </div>
+          {quickSectionExpanded ? (
+            <div className="soft-card">
+              <button
+                type="button"
+                className="diagnosis-card-toggle"
+                onClick={() => toggleQuick("__custom")}
+              >
+                <span className="record-title diagnosis-question-title">自定义补充</span>
+                <span className={`diagnosis-toggle-icon${quickExpanded.__custom ? " is-open" : ""}`}>▾</span>
+              </button>
+              {quickExpanded.__custom ? (
+                <div className="form-stack" style={{ marginTop: 12 }}>
+                  <div className="record-subtitle">可补充任何你希望 AI 在后续优化时重点参考的信息。</div>
+                  <div>
+                    <label className="field-label">你的补充</label>
+                    {readonly ? (
+                      <div className="record-subtitle" style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>
+                        {savedQuickAnswers.__custom?.trim() || "未填写"}
                       </div>
-                    ) : null}
+                    ) : (
+                      <textarea
+                        className="textarea"
+                        rows={4}
+                        placeholder="例如：补充项目背景、真实数据、投递偏好或想强调的经历..."
+                        value={savedQuickAnswers.__custom || ""}
+                        onChange={(event) =>
+                          setResumeQuickSupplementAnswers({
+                            ...savedQuickAnswers,
+                            __custom: event.target.value
+                          })
+                        }
+                      />
+                    )}
                   </div>
-                );
-              })
-            : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
-        <ExpandableInfoBox
-          title="调试查看：诊断模型完整输出"
-          subtitle="用于核对大模型返回的全部结构化结果"
-          content={diagnosis.rawModelOutput}
-          isExpanded={debugExpanded}
-          onToggle={setDebugExpanded}
-        />
       </section>
 
       {!readonly ? (

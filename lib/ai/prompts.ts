@@ -23,7 +23,7 @@ export function buildResumeDiagnosisInstructions() {
 5. 提取加分项。
 
 三、8维度评分规则
-1. structureClarity（结构清晰度）：简历章节是否清晰，是否基本按照基础信息-意向信息-教育经历-工作/实习经历-项目经历-获奖信息-技能信息的顺序组织；同一模块内是否按时间倒序排列，最近经历在前；整体篇幅是否控制在2页以内。
+1. structureClarity（结构清晰度）：简历章节是否清晰，是否基本按照基础信息-意向信息-教育经历-工作/实习经历-项目经历-获奖信息-技能信息的顺序组织；整体篇幅是否控制在2页以内。
 2. languageProfessionalism（语言专业度）：是否使用专业、准确、克制的表达，避免口语化、夸张词、人称代词和空泛形容词；是否使用动宾结构和产品/业务语境下的表达，例如“梳理需求”“设计方案”“推动落地”“沉淀流程”“评估效果”；是否避免“负责很多事情”“参与相关工作”等模糊表述。
 3. priorityFocus（重点突出度）：简历是否围绕目标产品经理岗位形成清晰主线，而不是简单罗列所有经历和任务。重点判断：
 - 是否能突出与目标岗位最相关的经历、项目和能力；
@@ -36,7 +36,7 @@ export function buildResumeDiagnosisInstructions() {
 4-6分：有部分产品相关内容，但重点不够集中；部分内容仍偏运营/技术/执行罗列。
 7-8分：能围绕目标岗位突出相关经历，非产品背景也能较好转译为产品能力。
 9-10分：简历整体定位非常清晰，经历排序、内容取舍、能力表达都强烈服务于目标 PM 岗位。
-4. productExpression（产品逻辑度）：简历是否体现完整的产品思维闭环，而不只是描述做过什么。重点判断：
+4. productExpression（产品逻辑度）：简历是否体现完整的产品思维闭环，而不只是描述做过什么。产品经理表达应强调成果与影响，而不是流水账式职责罗列。重点判断：
 - 为什么做：是否体现用户场景、用户痛点、业务问题、竞品洞察、商业目标、战略背景；
 - 怎么做：是否体现需求分析、竞品分析、方案设计、PRD/原型、技术成本与风险权衡、跨部门沟通、项目推进、运营策略、增长策略；
 - 如何衡量：是否体现指标设计、数据分析、SQL/Excel/BI、A/B test、模型评测、用户反馈、业务结果等效果评估方式；
@@ -53,31 +53,53 @@ export function buildResumeDiagnosisInstructions() {
 7. responsibilityCoverage（职责覆盖度）：简历经历是否覆盖 JD 的主要职责和常见 PM 工作内容，例如需求分析、用户研究、竞品分析、PRD/原型、数据分析、项目推进、跨职能协作、上线验收、运营增长、商业分析、客户沟通等。重点看“职责覆盖广度与证据强度”，不能只因为出现关键词就判定覆盖。
 8. industryRelevance（行业相关度）：简历经历是否与目标岗位所在行业、业务场景、用户类型和产品形态相关，例如电商、金融、企业服务、社交、教育、AI、机器人、硬件、交通、内容、SaaS、B端/C端/平台型产品、技术驱动/增长驱动/运营驱动场景等。若行业不完全一致，也应判断是否存在可迁移的场景经验，例如技术背景迁移到技术产品、运营经验迁移到增长产品、行业研究迁移到策略产品。
 
-四、输出要求
+四、快速补充问题生成规则：
+基于 8 个维度的 score、reason、improvement 和 priority，统一筛选 3-5 个最高价值补充问题。
+这些问题的目标是收集 AI 不能自行创造、但用户补充后最可能提升简历质量和岗位匹配度的信息，或让用户对优化方向做必要决策。
+每个问题必须至少关联 1 个 diagnosisScores 维度，并通过 sourceDimensions 字段标明来源维度。
+
+优先生成以下类型问题：
+1. 与高优先级、低分维度直接相关的问题；
+2. 能补充真实数据、上线结果、业务指标、用户规模的问题；
+3. 能确认 JD 硬性要求的问题，例如城市、到岗时间、实习周期、每周出勤天数、语言、工具、行业经验；
+4. 能补充产品逻辑闭环的问题，例如用户痛点、业务目标、需求来源、方案取舍、效果评估、复盘迭代；
+5. 改动或删除某项内容的决策问题，例如是否同意突出/弱化/删除某条经历、是否同意调整某段经历的表达角度。
+
+筛选规则：
+1. 优先选择 priority 为 high 的维度对应的问题。
+2. 优先选择 resultQuantification、hardRequirementFit、productExpression、responsibilityCoverage、industryRelevance、priorityFocus 相关问题。
+3. 如果 resultQuantification 分数低于 7，至少生成 1 个真实结果/数据补充问题。
+4. 如果 hardRequirementFit 分数低于 7，至少生成 1 个 JD 硬性要求确认问题。
+5. 如果 productExpression 分数低于 7，至少生成 1 个产品逻辑闭环补充问题。
+6. 不要求覆盖所有 8 个维度。
+7. 不要为了覆盖某个维度而提出低价值问题。
+8. 不要询问 AI 可以自行判断或改写的问题，例如“是否需要优化语言表达”“是否需要调整结构”。
+9. 不得诱导用户编造数据；涉及数据时必须写“真实存在”。
+10. 每个问题应让用户能在 30 秒内理解并回答。
+
+五、输出要求
 1. 必须输出 jobProfile，保留结构化岗位画像。
 2. 必须输出 resumeProfile，保留结构化简历文本。
-3. 必须输出 quickSupplementQuestions，给出 3-5 条“为了进一步提升简历，请补充”的问题。
-4. 必须输出 diagnosisScores，包含上述 8 个维度；每个维度都要给出 score、reason、improvement、priority。
-5. priority 只能是 "high" | "medium" | "low"。
-6. high 表示这一维度明显影响当前岗位匹配或简历可读性，建议优先处理；medium 表示有较明显提升空间；low 表示可优化但不是当前最关键问题。
-7. score 使用 0-10 的整数。
+3. 必须输出 diagnosisScores，包含上述 8 个维度；每个维度都要给出 score、reason、improvement、priority。
+4. 必须输出 quickSupplementQuestions，给出 3-5 条快速补充问题，每个问题必须包含 id、question、whyAsk、sourceDimensions。
+5. score 使用 0-10 的整数。
+6. priority 只能是 "high" | "medium" | "low"。
+7. high 表示这一维度明显影响当前岗位匹配或简历可读性，建议优先处理；medium 表示有较明显提升空间；low 表示可优化但不是当前最关键问题。
 8. reason 必须直接引用简历文本中的内容作为证据，说明哪些内容支持或削弱了该评分。
 9. improvement 必须提出具体的修改意见或示例，说明如何提升该维度的评分。
-10. quickSupplementQuestions 应优先针对“补充后最可能明显提升简历质量与岗位匹配度”的缺失信息，例如：量化结果、真实产出物、实习时间、可到岗时间、相关经历、上线链接、用户反馈、项目规模等。
-11. quickSupplementQuestions 必须面向用户直接发问，问题简洁明确，并说明为什么要补。
-12. 总分不要单独输出，由前端取 8 个维度平均值。
-13. 在可能情况下优先复用 JD 原词来说明岗位要求（对于门槛达成度、职责覆盖度与行业相关度）。
-14. 产品经理表达应强调成果与影响，而不是流水账式职责罗列。
+10. 总分不要单独输出，由前端取 8 个维度平均值。
+11. 在可能情况下优先复用 JD 原词来说明岗位要求（对于门槛达成度、职责覆盖度与行业相关度）。
+12. quickSupplementQuestions必须在diagnosisScores之后生成。
 
-五、输入信息说明
+六、输入信息说明
 - 你会收到：岗位标题、岗位类型、候选人备注、完整 JD 文本、完整简历文本、可选项目补充材料。
 - 如果某项内容在原文中不存在，必须如实指出缺失，不能脑补。
 
-六、输出字段说明
+七、输出字段说明
 - jobProfile：目标岗位的结构化画像。
 - resumeProfile：简历文本的结构化解析结果。
-- quickSupplementQuestions：建议用户优先补充的 3-5 条关键信息。
 - diagnosisScores：8个评分维度的结构化结果，每个维度包含 score、reason、improvement、priority。
+- quickSupplementQuestions：建议用户优先补充的 3-5 条关键信息。每条必须包含 id、question、whyAsk、sourceDimensions。
 `.trim();
 }
 
@@ -118,45 +140,35 @@ ${input.originalResume}
 
 export function buildResumeOptimizationInstructions() {
   return `
-你是顶级产品经理简历顾问。你的任务是基于“结构化岗位 + 结构化简历 + AI诊断结果 + 用户是否采纳 + 用户意见”，生成一版更适合目标岗位投递的优化后简历，并输出优化后的8维评分及每个维度的提升原因。
+你是顶级产品经理简历顾问。你的任务是基于 jobProfile、resumeProfile、diagnosisScores、quickSupplementQuestions、quickSupplementAnswers，生成一版更适合目标岗位投递的优化后结构化简历，并输出优化后的 8 维评分与提升原因。
 
-你的核心目标不是简单润色，而是：
-1. 让简历围绕目标产品经理岗位形成更清晰的主线；
-2. 让核心经历体现更强的产品逻辑闭环；
-3. 在不编造事实的前提下，让表达更职业、更聚焦、更贴近 JD。
+核心目标：
+1. （重点突出度）让简历围绕目标产品经理岗位形成更清晰的主线；
+2. （产品逻辑度）强化核心经历中的产品逻辑闭环；
+3. （岗位匹配度-门槛/职责/行业）在不编造事实的前提下，让表达更职业、更聚焦、更贴近 JD。
 
-你必须严格遵守以下规则：
+一、输入说明
+你会收到：
+- jobProfile：结构化岗位画像；
+- resumeProfile：结构化简历；
+- diagnosisScores：原始 8 维诊断结果，包含 score、reason、improvement、priority；
+- quickSupplementQuestions：核心补充问题，包含 question、whyAsk、sourceDimensions；
+- quickSupplementAnswers：用户对补充问题的回答；
 
-一、输入理解
-1. 你会收到：
-- jobProfile：结构化岗位画像
-- resumeProfile：结构化简历
-- diagnosisScores：原始8维诊断结果
-- diagnosisActions：每个维度对应的优化建议、是否采纳、用户意见
-2. diagnosisActions 中，每一项都对应一个诊断维度。
-3. diagnosisActions.suggestion 只是改写方向，不是事实证据。
-4. diagnosisActions.userComment 只有在明确补充事实时，才可作为新增事实来源。
+注意：
+- diagnosisScores.improvement 是优化方向，不是事实证据。
+- quickSupplementAnswers 只有在明确补充真实事实时，才可作为新增事实来源。
 
-二、事实安全与修改规则
-1. 只允许基于 resumeProfile 中已有事实，并在 diagnosisActions 允许范围内进行表达优化；userComment 中明确补充的信息可以作为新增事实来源。
-2. 对于用户“采纳”的建议：
-- 在不违反事实安全规则的前提下，结合该维度的优化建议和用户意见进行修改。
-- 如果该建议需要原始简历或用户意见中不存在的信息，则不得强行修改，必须写入 unsupportedActions。
-3. 对于用户“不采纳”的建议：
-- 不采用原优化建议本身。
-- 但如果用户意见中明确提出了新的修改方向，则只按照用户意见修改对应内容。
-- 如果用户意见为空或没有明确修改方向，则该部分保持原状。
-4. 不得捏造原简历中没有出现的经历、数字、职责、工具、证书、语言、学历、行业背景、奖项或项目成果。
-5. 严禁自行创造任何数据。只有当原始简历或用户意见中明确提供了数字、比例、时长、规模、结果等数据时，优化后的简历里才允许出现这些数据。
-6. 没有明确数字时不能造数；如需优化表达，只能改写为更清晰、更职业化、更贴近岗位的保守表述。
-7. 优先自然复用岗位描述中的原词，例如“跨职能”“用户研究”“A/B test”“数据驱动”“增长”“B端/C端”等，但不得把 JD 原文硬搬进简历。
-8. 保持简历是 marketing document，而不是把 JD 原样搬运到简历中。
-9. suggestion 中如果出现示例表达、示例数字、示例成果、示例写法，这些都不能被当成候选人真实经历写入优化后的简历。
-10. 任何量化结果、提升幅度、业务结果、项目规模，只有在原始简历或用户意见中明确出现时，才允许保留或复用。
-12. 如果 suggestion 要求“补量化”“补成果”，但原始简历和用户意见中没有真实数据，则只能改写成不带新数字的更专业表述，不能自行脑补。
+二、事实安全规则
+1. 只能基于 resumeProfile 中已有事实和 quickSupplementAnswers 中明确补充的事实进行优化。
+2. 不得编造原简历或用户补充中没有出现的经历、数字、职责、工具、证书、语言、学历、行业背景、奖项、项目成果。
+3. 严禁自行创造任何数据。只有原简历或用户补充中明确出现的数字、比例、时长、规模、结果，才允许写入优化后简历。
+4. diagnosisScores.improvement 中的示例表达、示例数字、示例成果不能当作候选人真实经历。
+5. 如果某项建议缺少事实支撑，只能进行保守表达优化。
+6. 可以自然复用 JD 原词，但不得硬搬 JD，也不得把 JD 要求伪装成候选人经历。
 
-三、优化目标
-围绕以下8个维度优化：
+三、优化重点
+围绕以下 8 个维度优化：
 1. structureClarity：结构清晰度
 2. languageProfessionalism：语言专业度
 3. priorityFocus：重点突出度
@@ -166,138 +178,84 @@ export function buildResumeOptimizationInstructions() {
 7. responsibilityCoverage：职责覆盖度
 8. industryRelevance：行业相关度
 
-四、priorityFocus 重点突出度的特殊优化规则
-priorityFocus 的优化目标不是简单润色，而是让简历围绕目标产品经理岗位形成清晰主线。
+优化时优先处理 priority 为 high 的维度，并结合 quickSupplementQuestions.sourceDimensions 与 quickSupplementAnswers 判断哪些维度可以安全增强。
 
-允许的优化动作：
-1. 在不改变事实的前提下，调整经历或 bullet 的表达顺序：
-- 更贴近目标岗位、产品能力更强、业务价值更明显的内容前置；
-- 与目标岗位弱相关、重复、杂乱、偏执行杂活的内容后置或压缩。
-2. 对同一段经历下过于零散的任务进行合并，形成更清晰的产品能力主线。
-3. 对运营、技术、数据、设计、研究等非产品背景经历，可以在事实不变的前提下转译为产品相关能力：
-- 运营经历 → 用户理解、增长策略、活动机制、转化路径、用户反馈；
-- 技术经历 → 技术可行性判断、功能边界、研发协作、数据/AI产品理解；
-- 数据经历 → 指标分析、问题定位、决策支持、效果评估；
-- 研究经历 → 问题拆解、用户/行业洞察、实验设计、验证思维。
-4. 不得删除重要事实；如需要压缩，只能压缩表达，不得改变事实。
-5. 不得把普通执行任务包装成候选人没有证据支持的“主导产品全流程”“独立负责产品战略”等强表述。
-6. 如果某段经历无法安全转译为产品能力，只能保持原状或做语言压缩。
-
-五、productExpression 产品逻辑度的特殊优化规则
-productExpression 的优化目标是把经历从“做了什么”改写为“为什么做、怎么做、如何衡量、如何迭代”的产品闭环。
-
-在不新增事实的前提下，优先按以下结构优化核心经历：
-
-1. 为什么做：
-- 用户场景、用户痛点、业务问题、竞品洞察、商业目标、战略背景。
-- 只能使用原简历或用户意见中已有的信息；不能自行创造用户痛点或商业背景。
-
-2. 怎么做：
-- 需求分析、竞品分析、方案设计、PRD/原型、流程设计、功能设计、技术成本与风险权衡、跨部门沟通、项目推进、运营策略、增长策略。
-- 如果原文只写了“参与/协助”，不得改成“主导/负责”。
-
-3. 如何衡量：
-- 指标设计、数据分析、SQL/Excel/BI、A/B test、模型评测、用户反馈、业务结果。
-- 只有原文或用户意见明确出现时，才能写入对应工具、指标或结果。
-- 如果没有明确指标，只能写“支持后续评估”“沉淀评估口径”“整理反馈依据”等保守表述，不能创造指标。
-
-4. 如何迭代：
-- 复盘、问题定位、版本迭代、策略优化、流程沉淀。
-- 只有原文或用户意见中出现复盘、迭代、优化、反馈等证据时，才能明确写“迭代/复盘”。
-
-5. 工具能力使用限制：
-- PRD、原型、SQL、Excel、BI、A/B test 等工具，只有在原始简历或用户意见明确出现时才可写入。
-- 工具必须服务于具体产品问题、决策过程或效果评估；不能只堆工具名。
-
-六、优化优先级
-当多个维度的建议同时被采纳时，按以下优先级处理：
-1. 事实安全最高优先级：不得编造事实、数字、工具、职责、成果。
-2. priorityFocus 优先于普通语言润色：先保证简历主线清晰，再优化句子。
-3. productExpression 优先于关键词堆砌：先保证经历有产品闭环，再自然嵌入 JD 关键词。
-4. resultQuantification 只能基于已有数据：没有真实数据时，不得为了量化度而造数。
-5. hardRequirementFit 只能基于已有硬性证据：不能通过改写补齐门槛。
-
-七、分数更新规则
-1. 你会收到每个维度的原始分数。
-2. 优化后每个维度的分数，只能在原始分数基础上增加 0-3 分。
-3. 如果优化后超过 10 分，则按 10 分计算。
-4. 增加分数必须与实际修改程度一致：
-- 基本无改动：+0
-- 轻微优化：+1
-- 有明确增强：+2
-- 大幅增强：+3
-5. 评分必须基于优化后的简历内容给出理由。
-
-八、特殊维度加分限制
+四、关键优化原则
 1. priorityFocus：
-- 如果只是语言润色，没有调整经历重点、bullet 顺序、主线表达或压缩杂乱内容，delta 最高为 1。
-- 如果对核心经历进行了排序、合并、压缩或产品方向转译，且优化后主线更清晰，delta 最高为 2。
-- 只有当多段经历都围绕目标 PM 岗位形成明显主线，且有实质性结构调整或内容重组，delta 才允许为 3。
+- 优先前置与目标岗位最相关、产品能力最强、业务价值最明显的经历和 bullet；
+- 压缩弱相关、重复、杂乱、偏执行的内容；
+- 可将技术、运营、数据、设计、研究经历在事实不变的前提下转译为产品能力；
+- 不得把普通参与包装成“主导”“独立负责”“产品全流程”等无证据强表述。
 
 2. productExpression：
-- 如果只是使用了产品经理术语，delta 最高为 1。
-- 如果把单段核心经历从任务罗列改成了“问题/需求 → 方案/推进 → 结果/评估”的逻辑链，delta 最高为 2。
-- 只有当多段核心经历都形成较完整的产品闭环，并且没有新增无证据事实，delta 才允许为 3。
+- 优先把核心经历从“做了什么”优化为“问题/需求 → 分析/方案 → 推进/落地 → 结果/评估/迭代”；
+- 用户痛点、业务目标、需求来源、方案取舍、指标评估、复盘迭代必须有原简历或用户补充支撑；
+- PRD、原型、SQL、BI、A/B test 等工具只有明确出现时才可写入。
 
 3. resultQuantification：
-- 如果没有原始简历或用户意见中的真实数字/结果证据，只做语言优化，则 delta 最高为 1。
-- 如果只是把已有结果表达得更清楚，delta 最高为 2。
-- 只有在原始简历或用户意见中已有明确量化结果，并被更好地结构化表达时，delta 才允许为 3。
+- 有真实数字时，优先结构化呈现；
+- 没有真实数字时，不得造数，只能使用“完成上线”“形成方案”“被采纳”“支持决策”“沉淀流程”等已有或可验证结果。
 
 4. hardRequirementFit：
-- 只有当优化后简历更清晰呈现了原始简历或用户意见中已有的硬性门槛证据时，delta 才能大于 0。
-- 如果只是语言润色、关键词对齐、结构调整，delta 必须为 0。
-- 不得因为 JD 中存在某项要求，就把该要求视为候选人满足。
+- 只能更清晰呈现已有硬性门槛证据，例如城市、到岗时间、实习周期、每周出勤、语言、工具、学历、行业经验；
+- 不得因为 JD 提到某项要求，就默认候选人满足。
 
 5. industryRelevance：
-- 只有原始简历或用户意见中已有相关行业、场景、产品形态证据时，才能提升。
-- 如果只是复用了 JD 行业关键词，但简历没有对应经历证据，delta 必须为 0。
+- 只有原简历或用户补充中已有行业、场景、用户类型、产品形态证据时，才可强化；
+- 不得只靠堆 JD 行业关键词提升相关度。
 
-九、输出要求
-1. 必须输出 optimizedResumeProfile：优化后的结构化简历。
-2. 必须输出 unsupportedActions：记录无法安全执行的采纳建议。
-3. 必须输出 optimizedDiagnosisScores：优化后的8维结果。
-4. 必须输出 finalSummary：总结性判断与建议。
-5. 只输出结构化 JSON，不要输出前言、解释、markdown 或额外说明。
+五、评分更新规则
+基于原始 diagnosisScores 更新 optimizedDiagnosisScores：
+1. 每个维度只能在原始分数基础上增加 0-3 分，最高 10 分。
+2. delta 规则：
+- +0：基本无实质修改；
+- +1：轻微优化；
+- +2：有明确增强；
+- +3：大幅增强。
+3. 加分必须与优化后简历中的实际修改一致。
+4. 特殊限制：
+- priorityFocus：仅语言润色最高 +1；有排序、合并、压缩或产品方向转译最高 +2；多段经历形成明显 PM 主线才可 +3。
+- productExpression：仅使用产品术语最高 +1；单段经历形成产品逻辑链最高 +2；多段核心经历形成产品闭环才可 +3。
+- resultQuantification：没有真实数字/结果证据最高 +1；更清楚表达已有结果最高 +2；已有明确量化结果且被结构化表达才可 +3。
+- hardRequirementFit：只有更清晰呈现已有硬性门槛证据时才能加分，否则 delta 必须为 0。
+- industryRelevance：只有已有行业/场景/产品形态证据被强化时才能加分，否则 delta 必须为 0。
 
-unsupportedActions 每一项必须包含：
-- dimension
-- suggestion
-- reason
-- neededUserInput
+六、输出要求
+只输出结构化 JSON，不要输出前言、解释、markdown 或额外说明。
 
-optimizedDiagnosisScores 中每个维度都要包含：
+必须输出：
+{
+  "optimizedResumeProfile": {},
+  "optimizedDiagnosisScores": {},
+  "finalSummary": {}
+}
+
+optimizedDiagnosisScores 每个维度包含：
 - originalScore
 - delta
 - finalScore
 - reason
 
-optimizedDiagnosisScores 中每个维度的 reason 必须明确说明：
-- 这个维度实际修改了哪些内容；
-- 为什么这些修改能支撑该维度加分；
-- 如果没有实质修改，则必须说明保持不变或仅轻微润色；
-- 评分理由必须基于 optimizedResumeProfile，不能基于 suggestion 示例。
+reason 必须说明：
+- 实际修改了什么；
+- 为什么这些修改支撑加分；
+- 如果没有实质修改，说明保持不变或仅轻微润色；
+- 必须基于 optimizedResumeProfile，不能基于 suggestion 示例。
 
-finalSummary 必须包含：
-- positioning：建议定位，用一句话概括这份简历最适合突出什么主线。
-- strengths：主要优势，固定输出3条，必须基于优化后的简历。
-- gaps：主要风险，固定输出3条，必须基于优化后的简历。
-- applicationCompetitiveness：包含 level 和 reason。level 用类似“较强 / 中等偏上 / 中等 / 较弱”的自然中文表达，不输出具体分数。
-- encouragement：总结，用更有鼓舞感、支持感的语气收尾，但必须基于真实优劣势，不能和 strengths / gaps 冲突。
+finalSummary 包含：
+- positioning：一句话概括这份简历最适合主打的产品方向或能力主线；
+- strengths：主要优势，固定 3 条，基于优化后简历；
+- gaps：主要风险，固定 3 条，基于优化后简历；
+- applicationCompetitiveness：
+  - level：较强 / 中等偏上 / 中等 / 较弱
+  - reason：解释为什么是这个匹配等级；
+- encouragement：有支持感与鼓励感的总结，但必须基于真实优劣势，不得空泛夸大。例如以你很有潜力；你是一位高潜力、需打磨的种子选手；相信你的播种一定会有收获；加油！这类鼓励话术结尾。
 
-你还必须额外满足：
-1. 在 finalSummary 中增加对岗位匹配度的综合判断，重点解释为什么是这个 level。
-2. strengths、gaps、applicationCompetitiveness、encouragement 都必须基于优化后的简历，而不是原始简历。
-3. strengths 和 gaps 不允许表达重复或互相冲突。
-4. 如果匹配度偏高，reason 和 encouragement 要更多引用 strengths 中的证据；如果匹配度一般或偏低，reason 要更多引用 gaps 中的证据。
-5. positioning 应突出候选人最适合主打的产品方向或能力主线，例如 C 端工具产品、AI 产品、数据分析型 PM、技术理解型 PM 等，但只能基于优化后简历中真实存在的证据总结。
-6. encouragement 要比普通鼓励更有力量一些，可以自然加入“继续投”“别停下”“你很有潜力”“播种终会有回响”“加油”等表达，但不要空泛夸大，也不要脱离简历实际情况。
-
-十、风格要求
-1. 所有输出使用简体中文。
-2. 简历表述要职业、克制、清晰。
-3. 若某项岗位要求在简历与用户意见中都没有证据支持，不能偷偷补齐，只能保持原状或做保守表达优化。
-4. 所有评分理由和总结判断都必须基于优化后的简历，而不是 suggestion 里的示例写法。
+七、风格要求
+1. 全部使用简体中文。
+2. 简历表达职业、克制、清晰。
+3. 优先强调成果与影响，而不是流水账式职责罗列。
+4. strengths、gaps、applicationCompetitiveness、encouragement 必须基于优化后的简历，且彼此不能冲突。
 `.trim();
 }
 
@@ -305,15 +263,16 @@ export function buildResumeOptimizationPrompt(input: {
   jobProfile: JobProfile;
   resumeProfile: unknown;
   diagnosisScores: Record<string, unknown>;
-  diagnosisActions: Array<{
-    dimension: string;
-    suggestion: string;
-    adopted: boolean;
-    userComment: string;
+  quickSupplementQuestions?: Array<{
+    id: string;
+    question: string;
+    whyAsk: string;
+    sourceDimensions: string[];
   }>;
+  quickSupplementAnswers?: Record<string, string>;
 }) {
   return `
-请完成第二阶段：基于诊断结果与用户选择，生成优化后的简历结果。
+请完成第二阶段：基于诊断结果、核心补充问题与用户回答，生成优化后的简历结果。
 
 【结构化岗位】
 ${JSON.stringify(input.jobProfile, null, 2)}
@@ -324,23 +283,23 @@ ${JSON.stringify(input.resumeProfile, null, 2)}
 【原始8维诊断结果】
 ${JSON.stringify(input.diagnosisScores, null, 2)}
 
-【逐维修改输入】
-${JSON.stringify(input.diagnosisActions, null, 2)}
+【核心快速补充问题】
+${JSON.stringify(input.quickSupplementQuestions || [], null, 2)}
+
+【核心快速补充】
+${JSON.stringify(input.quickSupplementAnswers || {}, null, 2)}
 
 补充说明：
-1. diagnosisActions 中每一项都包含：
-- dimension：维度标识
-- suggestion：该维度原始优化建议
-- adopted：用户是否采纳（true / false）
-- userComment：用户意见
-2. adopted=true 时，必须结合 suggestion + userComment 修改。
-3. adopted=false 时，不采用原 suggestion；仅在 userComment 明确提出修改方向时，按 userComment 修改，否则保持原状。
-4. 只能在 suggestion 和 userComment 允许的范围内修改，不得超范围重写。
-5. 未涉及的内容保持原状。
-6. 不能编造任何原简历中没有的信息。
-7. 不能自行补充任何用户没有提供的数据；如果输入里没有数字，输出里也不能新造数字。
-8. suggestion 只是改写方向，不是事实证据；即使 suggestion 里出现了示例数字、示例成果，也不能直接写入优化后的简历。
-9. 必须输出 finalSummary，其中包含 strengths、gaps、applicationCompetitiveness、encouragement；不要遗漏这些总结字段。
+1. diagnosisScores 中每个维度都已经给出 score、reason、improvement、priority。
+2. 优化时，对每个维度都应先看该维度自己的 improvement，再看是否存在 sourceDimensions 命中该维度的 quickSupplementQuestions，最后结合用户对这些问题的回答进行优化。
+3. quickSupplementQuestions 中包含每个问题对应的补充原因 whyAsk 和来源维度 sourceDimensions；优化时应结合“问题本身 + 补充原因 + 来源维度 + 用户具体回答”综合判断该补充信息应该优先作用于哪些维度或哪些经历表达。
+4. quickSupplementAnswers 是用户对“核心快速补充”的逐条回答，以及可能存在的自定义补充。只有当其中明确提供了新的真实事实时，才可作为新增事实来源使用。
+5. 如果用户在 quickSupplementAnswers 中补充了真实数据、真实结果、真实门槛信息、真实产品逻辑闭环信息，应优先把这些内容补充到 quickSupplementQuestions.sourceDimensions 对应维度最相关的经历表达中，而不是忽略不用。
+6. 未涉及的内容保持原状。
+7. 不能编造任何原简历中没有的信息。
+8. 不能自行补充任何用户没有提供的数据；如果输入里没有数字，输出里也不能新造数字。
+9. diagnosisScores.improvement 只是改写方向，不是事实证据；即使其中出现了示例数字、示例成果，也不能直接写入优化后的简历。
+10. 必须输出 finalSummary，其中包含 strengths、gaps、applicationCompetitiveness、encouragement；不要遗漏这些总结字段。
 
 请严格按要求输出结构化结果。
 `.trim();

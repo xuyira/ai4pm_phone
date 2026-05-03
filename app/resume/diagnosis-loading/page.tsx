@@ -25,10 +25,20 @@ export default function ResumeDiagnosisLoadingPage() {
     updateResumeRecordStatus
   } = usePrototypeStore();
   const hasStarted = useRef(false);
+  const isActive = useRef(true);
+
+  useEffect(() => {
+    isActive.current = true;
+    return () => {
+      isActive.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (resumeDiagnosis) {
-      router.replace("/resume/diagnosis-result");
+      if (isActive.current) {
+        router.replace("/resume/diagnosis-result");
+      }
       return;
     }
 
@@ -68,7 +78,9 @@ export default function ResumeDiagnosisLoadingPage() {
         }
 
         setResumeDiagnosis(payload.result);
-        router.replace("/resume/diagnosis-result");
+        if (isActive.current) {
+          router.replace("/resume/diagnosis-result");
+        }
       })
       .catch((error: Error) => {
         updateResumeRecordStatus("diagnose_failed", { error: error.message });

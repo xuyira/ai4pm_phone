@@ -25,7 +25,9 @@ export function BottomNav() {
             href={item.href}
             className={`bottom-link${isActive ? " is-active" : ""}`}
             onClick={() => {
-              clearResumeDraft();
+              if (item.href === "/") {
+                clearResumeDraft();
+              }
             }}
           >
             <span>{item.label}</span>

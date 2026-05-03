@@ -24,11 +24,13 @@ function ResumeResultContent() {
   const searchParams = useSearchParams();
   const readonly = searchParams.get("readonly") === "1";
   const recordId = searchParams.get("recordId");
-  const { getResumeRecord, resumeOptimization } = usePrototypeStore();
+  const { getResumeRecord, resumeDraft, resumeOptimization } = usePrototypeStore();
   const [detailsExpanded, setDetailsExpanded] = useState(false);
-  const [debugExpanded, setDebugExpanded] = useState(false);
   const linkedRecord = recordId ? getResumeRecord(recordId) : undefined;
   const optimization = linkedRecord?.optimization ?? resumeOptimization;
+  const pageDraft = linkedRecord?.draft ?? resumeDraft;
+  const [resumeExpanded, setResumeExpanded] = useState(false);
+  const [jobExpanded, setJobExpanded] = useState(false);
 
   useEffect(() => {
     if (!optimization) {
@@ -185,6 +187,25 @@ function ResumeResultContent() {
       </section>
       <StepStrip steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]} active={2} />
 
+      {pageDraft ? (
+        <section className="section form-stack">
+          <ExpandableInfoBox
+            title="上传的简历"
+            subtitle={pageDraft.extractedResume?.filename || "已上传简历"}
+            content={pageDraft.extractedResume?.content || ""}
+            isExpanded={resumeExpanded}
+            onToggle={setResumeExpanded}
+          />
+          <ExpandableInfoBox
+            title="目标岗位"
+            subtitle={pageDraft.jobTitle || "目标岗位"}
+            content={`岗位标题：${pageDraft.jobTitle}\n岗位类型：${pageDraft.jobType === "intern" ? "校招/实习" : "社招"}\n\n岗位内容：\n${pageDraft.jobDescription}\n${pageDraft.notes ? `\n其他备注：\n${pageDraft.notes}` : ""}`}
+            isExpanded={jobExpanded}
+            onToggle={setJobExpanded}
+          />
+        </section>
+      ) : null}
+
       <section className="section">
         <div className="score-card diagnosis-radar-card">
           <div className="diagnosis-total-score">
@@ -275,15 +296,13 @@ function ResumeResultContent() {
         </div>
       </section>
 
-      <section className="section form-stack">
-        <ExpandableInfoBox
-          title="调试查看：优化模型完整输出"
-          subtitle="用于核对大模型返回的全部结构化结果"
-          content={optimization.rawModelOutput}
-          isExpanded={debugExpanded}
-          onToggle={setDebugExpanded}
-        />
-      </section>
+      {readonly && recordId ? (
+        <section className="section" style={{ display: "flex", justifyContent: "center" }}>
+          <Link href="/profile/records/resume" className="button-secondary">
+            返回我的记录
+          </Link>
+        </section>
+      ) : null}
     </div>
   );
 }

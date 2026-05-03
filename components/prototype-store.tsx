@@ -145,6 +145,7 @@ export type ResumeQuickSupplementQuestion = {
   id: string;
   question: string;
   whyAsk: string;
+  sourceDimensions: string[];
 };
 
 export type ResumeDiagnosisScores = {
@@ -156,13 +157,6 @@ export type ResumeDiagnosisScores = {
   hardRequirementFit: ResumeDiagnosisDimension;
   responsibilityCoverage: ResumeDiagnosisDimension;
   industryRelevance: ResumeDiagnosisDimension;
-};
-
-export type ResumeOptimizationUnsupportedAction = {
-  dimension: string;
-  suggestion: string;
-  reason: string;
-  neededUserInput: string;
 };
 
 export type ResumeOptimizationFinalSummary = {
@@ -328,7 +322,6 @@ export type ResumeOptimizationResult = {
       reason: string;
     };
   };
-  unsupportedActions: ResumeOptimizationUnsupportedAction[];
   finalSummary: ResumeOptimizationFinalSummary;
   rawModelOutput: string;
 };
