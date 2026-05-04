@@ -120,11 +120,35 @@ function ResumeResultContent() {
         .filter(Boolean)
         .map((line) => `<div class="pdf-bullet">${renderInlineRichText(line)}</div>`)
         .join("");
-    const removeGpaFromDescription = (value: string) =>
-      value
-        .replace(/[；;，,、\s]*GPA[：:\s]*\d+(?:\.\d+)?\s*\/\s*\d+(?:\.\d+)?[；;，,、\s]*/gi, " ")
+    const removeGpaFromDescription = (value: string, gpa?: string) => {
+      let next = value;
+
+      const repeatedScorePatterns = [
+        /[；;，,、\s]*GPA[：:\s]*[^\n；;，,、]*/gi,
+        /[；;，,、\s]*(?:专业课)?平均?学分绩[：:\s]*[^\n；;，,、]*/gi,
+        /[；;，,、\s]*绩点[：:\s]*[^\n；;，,、]*/gi,
+        /[；;，,、\s]*排名[：:\s]*[^\n；;，,、]*/gi,
+        /[；;，,、\s]*前\d+%/gi
+      ];
+
+      repeatedScorePatterns.forEach((pattern) => {
+        next = next.replace(pattern, " ");
+      });
+
+      const normalizedGpa = cleanText(gpa)
+        .replace(/[（）()]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      if (normalizedGpa) {
+        const escaped = normalizedGpa.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        next = next.replace(new RegExp(escaped, "gi"), " ");
+      }
+
+      return next
         .replace(/^[；;，,、\s]+|[；;，,、\s]+$/g, "")
         .replace(/\s{2,}/g, " ");
+    };
     const renderSection = (title: string, body: string) =>
       body
         ? `<section class="pdf-section"><div class="pdf-section-title">${escapeHtml(title)}</div>${body}</section>`
@@ -166,7 +190,7 @@ function ResumeResultContent() {
         time: `${item.startDate} - ${item.endDate}`,
         center: [item.school, [item.major, item.college].filter(Boolean).join("/")].filter(Boolean).join(" | "),
         right: item.degree,
-        details: [item.gpa ? `GPA：${item.gpa}` : "", removeGpaFromDescription(item.description)]
+        details: [item.gpa ? `GPA：${item.gpa}` : "", removeGpaFromDescription(item.description, item.gpa)]
       }))
     );
 
@@ -189,12 +213,51 @@ function ResumeResultContent() {
     );
 
     const achievementHtml = renderBulletLines(
-      profile.achievements.map((item) =>
-        [item.name, item.type ? `（${item.type}）` : "", item.date, item.description]
-          .filter((part) => cleanText(part))
-          .join(" ")
-      )
+      profile.achievements.map((item) => {
+        const name = cleanText(item.name);
+        const date = cleanText(item.date);
+        const description = cleanText(item.description);
+        const type = cleanText(item.type);
+
+        const mainLine = [name, date ? `（${date}）` : "", !date && type ? `（${type}）` : ""]
+          .filter(Boolean)
+          .join("");
+
+        return [mainLine, description].filter(Boolean).join("：");
+      })
     );
+    const autoFitScript = `
+      (function () {
+        function applyFit() {
+          const page = document.querySelector('.pdf-page');
+          const inner = document.querySelector('.pdf-page-inner');
+          if (!page || !inner) return;
+
+          const root = document.documentElement;
+          let scale = 1;
+          root.style.setProperty('--fit-scale', '1');
+
+          const fits = () =>
+            inner.scrollHeight <= page.clientHeight && inner.scrollWidth <= page.clientWidth;
+
+          if (fits()) {
+            return;
+          }
+
+          while (scale > 0.84) {
+            scale = Math.round((scale - 0.02) * 100) / 100;
+            root.style.setProperty('--fit-scale', String(scale));
+            if (fits()) {
+              break;
+            }
+          }
+        }
+
+        window.addEventListener('load', applyFit);
+        window.addEventListener('resize', applyFit);
+        window.addEventListener('beforeprint', applyFit);
+      })();
+    `;
 
     return `
       <!doctype html>
@@ -203,6 +266,9 @@ function ResumeResultContent() {
           <meta charset="utf-8" />
           <title>${escapeHtml(profile.basicInfo.name || "优化简历")}</title>
           <style>
+            html {
+              --fit-scale: 1;
+            }
             body {
               margin: 0;
               background: #efe8dc;
@@ -215,66 +281,69 @@ function ResumeResultContent() {
               margin: 0 auto;
               background: #fffdf9;
               box-sizing: border-box;
-              padding: 12mm 11mm 10mm;
+              padding: calc(12mm * var(--fit-scale)) calc(11mm * var(--fit-scale)) calc(10mm * var(--fit-scale));
               overflow: hidden;
+            }
+            .pdf-page-inner {
+              width: 100%;
             }
             .pdf-header {
               border-bottom: 1px solid #d9cbb8;
-              padding-bottom: 6px;
+              padding-bottom: calc(6px * var(--fit-scale));
             }
             .pdf-name {
-              font-size: 22px;
+              font-size: calc(22px * var(--fit-scale));
               font-weight: 800;
               line-height: 1.1;
             }
             .pdf-contact {
-              margin-top: 6px;
-              font-size: 10.5px;
+              margin-top: calc(6px * var(--fit-scale));
+              font-size: calc(10.5px * var(--fit-scale));
               color: #5c5148;
               display: flex;
               flex-wrap: wrap;
-              gap: 4px 12px;
+              gap: calc(4px * var(--fit-scale)) calc(12px * var(--fit-scale));
             }
             .pdf-section {
-              margin-top: 9px;
+              margin-top: calc(9px * var(--fit-scale));
             }
             .pdf-section-title {
-              font-size: 11.5px;
+              font-size: calc(11.5px * var(--fit-scale));
               font-weight: 800;
-              padding-bottom: 3px;
+              padding-bottom: calc(3px * var(--fit-scale));
               border-bottom: 1px solid #dfd4c3;
             }
             .pdf-inline-list {
-              margin-top: 5px;
-              font-size: 10.5px;
+              margin-top: calc(5px * var(--fit-scale));
+              font-size: calc(10.5px * var(--fit-scale));
               color: #4b433b;
               display: flex;
               flex-wrap: wrap;
-              gap: 4px 12px;
+              gap: calc(4px * var(--fit-scale)) calc(12px * var(--fit-scale));
             }
             .pdf-entry {
-              margin-top: 6px;
+              margin-top: calc(6px * var(--fit-scale));
             }
             .pdf-entry-head {
               display: flex;
               justify-content: space-between;
-              gap: 8px;
+              gap: calc(8px * var(--fit-scale));
               align-items: flex-start;
             }
             .pdf-entry-head-grid {
               display: grid;
-              grid-template-columns: 84px minmax(0, 1fr) auto;
+              grid-template-columns: calc(84px * var(--fit-scale)) minmax(0, 1fr) auto;
               align-items: start;
             }
             .pdf-entry-title {
-              font-size: 11px;
+              font-size: calc(11px * var(--fit-scale));
               font-weight: 700;
             }
             .pdf-entry-title-center {
               text-align: center;
             }
             .pdf-entry-time {
-              font-size: 10px;
+              font-size: calc(10px * var(--fit-scale));
               color: #7a6d61;
               white-space: nowrap;
             }
@@ -282,19 +351,19 @@ function ResumeResultContent() {
               text-align: left;
             }
             .pdf-entry-right {
-              font-size: 10.5px;
+              font-size: calc(10.5px * var(--fit-scale));
               font-weight: 600;
               color: #4e453d;
               text-align: right;
               white-space: nowrap;
             }
             .pdf-entry-details {
-              margin-top: 3px;
+              margin-top: calc(3px * var(--fit-scale));
             }
             .pdf-bullet {
               position: relative;
-              padding-left: 11px;
-              font-size: 10px;
+              padding-left: calc(11px * var(--fit-scale));
+              font-size: calc(10px * var(--fit-scale));
               line-height: 1.4;
               color: #4b433b;
               white-space: normal;
@@ -324,22 +393,25 @@ function ResumeResultContent() {
         </head>
         <body>
           <div class="pdf-page">
-            <div class="pdf-header">
-              ${profile.basicInfo.name ? `<div class="pdf-name">${escapeHtml(profile.basicInfo.name)}</div>` : ""}
-              <div class="pdf-contact">
-                ${profile.basicInfo.gender ? `<span>性别：${escapeHtml(profile.basicInfo.gender)}</span>` : ""}
-                ${profile.basicInfo.age ? `<span>年龄：${escapeHtml(profile.basicInfo.age)}</span>` : ""}
-                ${profile.basicInfo.phone ? `<span>电话：${escapeHtml(profile.basicInfo.phone)}</span>` : ""}
-                ${profile.basicInfo.email ? `<span>邮箱：${escapeHtml(profile.basicInfo.email)}</span>` : ""}
+            <div class="pdf-page-inner">
+              <div class="pdf-header">
+                ${profile.basicInfo.name ? `<div class="pdf-name">${escapeHtml(profile.basicInfo.name)}</div>` : ""}
+                <div class="pdf-contact">
+                  ${profile.basicInfo.gender ? `<span>性别：${escapeHtml(profile.basicInfo.gender)}</span>` : ""}
+                  ${profile.basicInfo.age ? `<span>年龄：${escapeHtml(profile.basicInfo.age)}</span>` : ""}
+                  ${profile.basicInfo.phone ? `<span>电话：${escapeHtml(profile.basicInfo.phone)}</span>` : ""}
+                  ${profile.basicInfo.email ? `<span>邮箱：${escapeHtml(profile.basicInfo.email)}</span>` : ""}
+                </div>
               </div>
+              ${renderSection("求职意向", intentItems.length ? `<div class="pdf-inline-list">${intentItems.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>` : "")}
+              ${renderSection("教育经历", educationHtml)}
+              ${renderSection("工作/实习经历", workHtml)}
+              ${renderSection("项目经历", projectHtml)}
+              ${renderSection("成果与荣誉", achievementHtml)}
+              ${renderSection("技能信息", skillItems.length ? renderBulletLines(skillItems) : "")}
             </div>
-            ${renderSection("求职意向", intentItems.length ? `<div class="pdf-inline-list">${intentItems.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>` : "")}
-            ${renderSection("教育经历", educationHtml)}
-            ${renderSection("工作/实习经历", workHtml)}
-            ${renderSection("项目经历", projectHtml)}
-            ${renderSection("成果与荣誉", achievementHtml)}
-            ${renderSection("技能信息", skillItems.length ? skillItems.map((item) => `<div class="pdf-entry-text">${escapeHtml(item)}</div>`).join("") : "")}
           </div>
+          <script>${autoFitScript}</script>
         </body>
       </html>
     `;
@@ -462,11 +534,14 @@ function ResumeResultContent() {
               alignItems: "center",
               justifyContent: "space-between",
               gap: 12,
-              flexWrap: "wrap"
+              flexWrap: "wrap",
+              minWidth: 0
             }}
           >
-            <div className="record-title">优化后简历</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div className="record-title" style={{ minWidth: 0 }}>
+              优化后简历
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", minWidth: 0 }}>
               <button
                 type="button"
                 className="button-secondary"

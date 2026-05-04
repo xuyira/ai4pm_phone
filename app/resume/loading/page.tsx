@@ -27,15 +27,21 @@ export default function ResumeLoadingPage() {
     resumeOptimizationStatus,
     setResumeOptimization,
     setResumeOptimizationStatus,
-    updateResumeRecordStatus
+    updateResumeRecordStatus,
+    currentResumeRecordId,
+    getResumeRecord
   } = usePrototypeStore();
   const hasStarted = useRef(false);
   const isActive = useRef(true);
+  const pollingRef = useRef<number | null>(null);
 
   useEffect(() => {
     isActive.current = true;
     return () => {
       isActive.current = false;
+      if (pollingRef.current) {
+        window.clearTimeout(pollingRef.current);
+      }
     };
   }, []);
 
@@ -47,7 +53,61 @@ export default function ResumeLoadingPage() {
       return;
     }
 
-    if (hasStarted.current || resumeOptimizationStatus === "running") {
+    const activeRecord = currentResumeRecordId ? getResumeRecord(currentResumeRecordId) : undefined;
+    const existingTaskId = activeRecord?.optimizationTaskId || null;
+
+    const pollTask = (taskId: string) => {
+      void fetch(`/api/resume/tasks/${taskId}`)
+        .then(async (response) => {
+          const payload = (await response.json()) as {
+            detail?: string;
+            status?: "queued" | "running" | "completed" | "failed";
+            result?: ResumeOptimizationResult;
+            error?: string | null;
+          };
+
+          if (!response.ok) {
+            throw new Error(payload.detail ?? "优化任务状态获取失败");
+          }
+
+          if (payload.status === "completed" && payload.result) {
+            setResumeOptimization(payload.result);
+            if (isActive.current) {
+              router.replace("/resume/result");
+            }
+            return;
+          }
+
+          if (payload.status === "failed") {
+            const message = payload.error || "优化失败，请重试。";
+            updateResumeRecordStatus("optimize_failed", {
+              error: message,
+              optimizationTaskId: null
+            });
+            setResumeOptimizationStatus("failed", message);
+            return;
+          }
+
+          setResumeOptimizationStatus("running");
+          pollingRef.current = window.setTimeout(() => pollTask(taskId), 2000);
+        })
+        .catch((error: Error) => {
+          updateResumeRecordStatus("optimize_failed", {
+            error: error.message,
+            optimizationTaskId: null
+          });
+          setResumeOptimizationStatus("failed", error.message);
+        });
+    };
+
+    if (existingTaskId) {
+      hasStarted.current = true;
+      setResumeOptimizationStatus("running");
+      pollTask(existingTaskId);
+      return;
+    }
+
+    if (hasStarted.current) {
       return;
     }
 
@@ -59,10 +119,9 @@ export default function ResumeLoadingPage() {
 
     hasStarted.current = true;
     ensureResumeRecord("optimizing");
-    updateResumeRecordStatus("optimizing");
     setResumeOptimizationStatus("running");
 
-    void fetch("/api/resume/optimize", {
+    void fetch("/api/resume/tasks/optimize", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -79,45 +138,41 @@ export default function ResumeLoadingPage() {
       })
     })
       .then(async (response) => {
-        const rawText = await response.text();
-        let payload: { detail?: string; result?: ResumeOptimizationResult } = {};
-
-        if (rawText) {
-          try {
-            payload = JSON.parse(rawText) as {
-              detail?: string;
-              result?: ResumeOptimizationResult;
-            };
-          } catch {
-            payload = { detail: rawText };
-          }
-        }
+        const payload = (await response.json()) as {
+          detail?: string;
+          taskId?: string;
+        };
 
         if (!response.ok) {
           throw new Error(payload.detail ?? "简历优化失败");
         }
 
-        if (!payload.result) {
-          throw new Error(payload.detail ?? "简历优化失败：服务端未返回结果。");
+        if (!payload.taskId) {
+          throw new Error(payload.detail ?? "简历优化任务创建失败：服务端未返回任务ID。");
         }
 
-        setResumeOptimization(payload.result);
-        if (isActive.current) {
-          router.replace("/resume/result");
-        }
+        updateResumeRecordStatus("optimizing", {
+          optimizationTaskId: payload.taskId,
+          error: null
+        });
+        pollTask(payload.taskId);
       })
       .catch((error: Error) => {
-        updateResumeRecordStatus("optimize_failed", { error: error.message });
+        updateResumeRecordStatus("optimize_failed", {
+          error: error.message,
+          optimizationTaskId: null
+        });
         setResumeOptimizationStatus("failed", error.message);
       });
   }, [
+    currentResumeRecordId,
     ensureResumeRecord,
+    getResumeRecord,
     push,
     resumeDiagnosis,
     resumeDiagnosisActions,
     resumeQuickSupplementAnswers,
     resumeOptimization,
-    resumeOptimizationStatus,
     router,
     setResumeOptimization,
     setResumeOptimizationStatus,

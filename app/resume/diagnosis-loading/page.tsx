@@ -25,15 +25,22 @@ export default function ResumeDiagnosisLoadingPage() {
     resumeDiagnosisStatus,
     setResumeDiagnosis,
     setResumeDiagnosisStatus,
-    updateResumeRecordStatus
+    updateResumeRecordStatus,
+    currentResumeRecordId,
+    getResumeRecord
   } = usePrototypeStore();
   const hasStarted = useRef(false);
   const isActive = useRef(true);
+  const pollingRef = useRef<number | null>(null);
+  const transientErrorCountRef = useRef(0);
 
   useEffect(() => {
     isActive.current = true;
     return () => {
       isActive.current = false;
+      if (pollingRef.current) {
+        window.clearTimeout(pollingRef.current);
+      }
     };
   }, []);
 
@@ -45,7 +52,71 @@ export default function ResumeDiagnosisLoadingPage() {
       return;
     }
 
-    if (hasStarted.current || resumeDiagnosisStatus === "running") {
+    const activeRecord = currentResumeRecordId ? getResumeRecord(currentResumeRecordId) : undefined;
+    const existingTaskId = activeRecord?.diagnosisTaskId || null;
+
+    const pollTask = (taskId: string) => {
+      void fetch(`/api/resume/tasks/${taskId}`)
+        .then(async (response) => {
+          transientErrorCountRef.current = 0;
+          const payload = (await response.json()) as {
+            detail?: string;
+            status?: "queued" | "running" | "completed" | "failed";
+            result?: ResumeDiagnosisResult;
+            error?: string | null;
+          };
+
+          if (!response.ok) {
+            throw new Error(payload.detail ?? "诊断任务状态获取失败");
+          }
+
+          if (payload.status === "completed" && payload.result) {
+            setResumeDiagnosis(payload.result);
+            if (isActive.current) {
+              router.replace("/resume/diagnosis-result");
+            }
+            return;
+          }
+
+          if (payload.status === "failed") {
+            const message = payload.error || "诊断失败，请重试。";
+            updateResumeRecordStatus("diagnose_failed", {
+              error: message,
+              diagnosisTaskId: null
+            });
+            setResumeDiagnosisStatus("failed", message);
+            return;
+          }
+
+          setResumeDiagnosisStatus("running");
+          pollingRef.current = window.setTimeout(() => pollTask(taskId), 2000);
+        })
+        .catch((error: Error) => {
+          transientErrorCountRef.current += 1;
+
+          if (transientErrorCountRef.current >= 6) {
+            updateResumeRecordStatus("diagnosing", {
+              error: "网络波动，正在继续重试…",
+              diagnosisTaskId: taskId
+            });
+          }
+
+          setResumeDiagnosisStatus("running");
+          pollingRef.current = window.setTimeout(
+            () => pollTask(taskId),
+            transientErrorCountRef.current >= 3 ? 4000 : 2000
+          );
+        });
+    };
+
+    if (existingTaskId) {
+      hasStarted.current = true;
+      setResumeDiagnosisStatus("running");
+      pollTask(existingTaskId);
+      return;
+    }
+
+    if (hasStarted.current) {
       return;
     }
 
@@ -57,10 +128,9 @@ export default function ResumeDiagnosisLoadingPage() {
 
     hasStarted.current = true;
     ensureResumeRecord("diagnosing");
-    updateResumeRecordStatus("diagnosing");
     setResumeDiagnosisStatus("running");
 
-    void fetch("/api/resume/diagnose", {
+    void fetch("/api/resume/tasks/diagnose", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -75,42 +145,38 @@ export default function ResumeDiagnosisLoadingPage() {
       })
     })
       .then(async (response) => {
-        const rawText = await response.text();
-        let payload: { detail?: string; result?: ResumeDiagnosisResult } = {};
-
-        if (rawText) {
-          try {
-            payload = JSON.parse(rawText) as {
-              detail?: string;
-              result?: ResumeDiagnosisResult;
-            };
-          } catch {
-            payload = { detail: rawText };
-          }
-        }
+        const payload = (await response.json()) as {
+          detail?: string;
+          taskId?: string;
+        };
 
         if (!response.ok) {
           throw new Error(payload.detail ?? "简历诊断失败");
         }
 
-        if (!payload.result) {
-          throw new Error(payload.detail ?? "简历诊断失败：服务端未返回结果。");
+        if (!payload.taskId) {
+          throw new Error(payload.detail ?? "简历诊断任务创建失败：服务端未返回任务ID。");
         }
 
-        setResumeDiagnosis(payload.result);
-        if (isActive.current) {
-          router.replace("/resume/diagnosis-result");
-        }
+        updateResumeRecordStatus("diagnosing", {
+          diagnosisTaskId: payload.taskId,
+          error: null
+        });
+        pollTask(payload.taskId);
       })
       .catch((error: Error) => {
-        updateResumeRecordStatus("diagnose_failed", { error: error.message });
+        updateResumeRecordStatus("diagnose_failed", {
+          error: error.message,
+          diagnosisTaskId: null
+        });
         setResumeDiagnosisStatus("failed", error.message);
       });
   }, [
+    currentResumeRecordId,
     ensureResumeRecord,
+    getResumeRecord,
     push,
     resumeDiagnosis,
-    resumeDiagnosisStatus,
     resumeDraft.extractedResume,
     resumeDraft.jobDescription,
     resumeDraft.jobTitle,

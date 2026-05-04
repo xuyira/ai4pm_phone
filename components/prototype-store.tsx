@@ -346,6 +346,8 @@ export type ResumeFlowRecord = {
   quickSupplementAnswers: Record<string, string>;
   optimization: ResumeOptimizationResult | null;
   lastError: string | null;
+  diagnosisTaskId?: string | null;
+  optimizationTaskId?: string | null;
 };
 
 type PrototypeStoreValue = {
@@ -376,6 +378,8 @@ type PrototypeStoreValue = {
       optimization?: ResumeOptimizationResult | null;
       diagnosisActions?: ResumeDiagnosisActionInput[];
       quickSupplementAnswers?: Record<string, string>;
+      diagnosisTaskId?: string | null;
+      optimizationTaskId?: string | null;
     }
   ) => void;
   updateResumeDraft: (patch: Partial<ResumeDraft>) => void;
@@ -581,7 +585,9 @@ export function PrototypeStoreProvider({
       diagnosisActions: existingRecord?.diagnosisActions || [],
       quickSupplementAnswers: existingRecord?.quickSupplementAnswers || {},
       optimization: existingRecord?.optimization || null,
-      lastError: null
+      lastError: null,
+      diagnosisTaskId: existingRecord?.diagnosisTaskId || null,
+      optimizationTaskId: existingRecord?.optimizationTaskId || null
     };
 
     upsertResumeRecord(nextRecord);
@@ -598,6 +604,8 @@ export function PrototypeStoreProvider({
         optimization?: ResumeOptimizationResult | null;
         diagnosisActions?: ResumeDiagnosisActionInput[];
         quickSupplementAnswers?: Record<string, string>;
+        diagnosisTaskId?: string | null;
+        optimizationTaskId?: string | null;
       }
     ) => {
       if (!currentResumeRecordId) {
@@ -625,7 +633,15 @@ export function PrototypeStoreProvider({
                     options?.quickSupplementAnswers !== undefined
                       ? options.quickSupplementAnswers
                       : item.quickSupplementAnswers,
-                  lastError: options?.error ?? null
+                  lastError: options?.error ?? null,
+                  diagnosisTaskId:
+                    options?.diagnosisTaskId !== undefined
+                      ? options.diagnosisTaskId
+                      : item.diagnosisTaskId || null,
+                  optimizationTaskId:
+                    options?.optimizationTaskId !== undefined
+                      ? options.optimizationTaskId
+                      : item.optimizationTaskId || null
                 }
               : item
           )
@@ -662,7 +678,9 @@ export function PrototypeStoreProvider({
         diagnosisActions: [],
         quickSupplementAnswers: {},
         optimization: null,
-        lastError: null
+        lastError: null,
+        diagnosisTaskId: null,
+        optimizationTaskId: null
       });
     }
     setResumeDiagnosisState(null);
@@ -703,7 +721,9 @@ export function PrototypeStoreProvider({
       diagnosisActions: [],
       quickSupplementAnswers: {},
       optimization: null,
-      lastError: null
+      lastError: null,
+      diagnosisTaskId: null,
+      optimizationTaskId: null
     });
     setResumeDiagnosisState(null);
     setResumeDiagnosisActionsState([]);
@@ -740,7 +760,9 @@ export function PrototypeStoreProvider({
         diagnosisActions: [],
         quickSupplementAnswers: {},
         optimization: null,
-        lastError: null
+        lastError: null,
+        diagnosisTaskId: null,
+        optimizationTaskId: null
       });
     }
     setResumeDiagnosisState(null);
@@ -773,7 +795,9 @@ export function PrototypeStoreProvider({
         ? resumeRecords.find((item) => item.id === recordId)?.quickSupplementAnswers || {}
         : {},
       optimization: null,
-      lastError: null
+      lastError: null,
+      diagnosisTaskId: null,
+      optimizationTaskId: null
     };
 
     upsertResumeRecord(nextRecord);
@@ -863,7 +887,9 @@ export function PrototypeStoreProvider({
           ? resumeQuickSupplementAnswers
           : existingRecord?.quickSupplementAnswers || {},
       optimization: result,
-      lastError: null
+      lastError: null,
+      diagnosisTaskId: null,
+      optimizationTaskId: null
     };
 
     upsertResumeRecord(nextRecord);
@@ -952,7 +978,9 @@ export function PrototypeStoreProvider({
           ? "failed"
           : record.diagnosis
             ? "completed"
-            : "idle"
+            : record.diagnosisTaskId
+              ? "running"
+              : "idle"
     );
     setResumeDiagnosisError(
       record.status === "diagnose_failed" ? record.lastError || "诊断失败，请重试。" : null
@@ -965,7 +993,9 @@ export function PrototypeStoreProvider({
           ? "failed"
           : record.optimization
             ? "completed"
-            : "idle"
+            : record.optimizationTaskId
+              ? "running"
+              : "idle"
     );
     setResumeOptimizationError(
       record.status === "optimize_failed" ? record.lastError || "优化失败，请重试。" : null

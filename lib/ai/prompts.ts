@@ -331,6 +331,8 @@ export function buildResumeOptimizationInstructions() {
    - endDate
    - gpa
    - description
+   - gpa 与 description 不得重复表达同一成绩信息；GPA、绩点、学分绩、平均学分绩、专业课平均学分绩、排名百分位等如果本质上是同一条成绩结论，只保留一处，优先放在 gpa 字段
+   - description 里不要再次写与 gpa 字段重复的 GPA/绩点/学分绩/排名信息，除非是另一条独立且不重复的教育补充信息
 
 4. workExperience：工作/实习经历，数组
    - company
@@ -342,6 +344,9 @@ export function buildResumeOptimizationInstructions() {
    - 总结词必须清晰概括动作或主题，例如：**场景洞察**：...、**功能设计**：...、**流程优化**：...、**体验复盘**：...、**用户分析**：...、**数据处理**：...
    - 总结词要与该段经历内容真实匹配，避免空泛重复；同一段经历下尽量不要反复使用完全相同的总结词
    - 冒号后再展开具体动作、对象、方法、结果，优先保持一句话完整、可验证、适合简历阅读
+   - workExperience 只能收录真实的工作/实习/兼职组织经历，主体应是公司、机构、实验室、团队或正式组织，不得把课程项目、校园项目、比赛项目、个人项目、作品项目写进 workExperience
+   - 如果一段内容本质上是项目，即使候选人在其中担任负责人/PM/产品经理，也应写入 projectExperience，而不是 workExperience
+   - 不得与 projectExperience 重复：同一个项目名称、同一项目描述、同一项目成果，不可同时在 workExperience 和 projectExperience 各写一次
 
 5. projectExperience：项目经历，数组
    - projectName
@@ -353,6 +358,8 @@ export function buildResumeOptimizationInstructions() {
    - 总结词必须清晰概括动作或主题，例如：**场景洞察**：...、**功能设计**：...、**流程优化**：...、**体验复盘**：...、**用户分析**：...、**数据处理**：...
    - 总结词要与该项目内容真实匹配，避免空泛重复；同一项目下尽量不要反复使用完全相同的总结词
    - 冒号后再展开具体动作、对象、方法、结果，优先保持一句话完整、可验证、适合简历阅读
+   - 原简历中属于校园项目、课程项目、社团项目、比赛项目、个人作品、实验项目、平台/软件项目的内容，应优先归入 projectExperience
+   - 不得与 workExperience 重复：如果已经写入 projectExperience，就不要把同名或高度相似的项目再包装成公司/实习经历写入 workExperience
 
 6. achievements：成果与荣誉，数组
    - type
@@ -362,6 +369,12 @@ export function buildResumeOptimizationInstructions() {
    - 仅收录可独立成章的奖项、荣誉、证书、竞赛结果、论文发表、资格认证、专利、公开演讲/展示等明确成果
    - 不要把 projectExperience 或 workExperience 里已经描述过的项目内容、项目职责、项目结果再次写入 achievements
    - 不要创建“项目成果”“项目落地”“原型落地”这类本质上只是项目经历摘要的条目
+   - achievements 必须避免字段内重复：同一条奖项/荣誉信息不要同时在 name、date、description 中重复复述
+   - name 应只保留奖项/荣誉主名称，例如“全国大学生数学建模竞赛湖北省一等奖”
+   - date 只写时间，例如“2024”或“2024.09”；如果原文没有明确时间，可留空
+   - description 只写补充说明，例如合并展示的多项同类奖项、级别说明、备注信息；不要原样重复 name
+   - 如果 description 与 name 本质相同，description 应置空
+   - 若多项高度相近的同类奖项需要合并成一条，应在 name 中给出概括标题，description 中仅保留不重复的奖项明细
    - 如果没有独立的成果与荣誉，必须输出 []
 
 7. skills：技能信息

@@ -1,6 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
+    "app/api/resume/tasks/**/*.ts": {
+      "maxDuration": 300
+    },
     "api/**/*.py": {
       "maxDuration": 60,
       "excludeFiles": "{.git/**,.next/**,node_modules/**,docs/**,手机端原型参考/**}"
