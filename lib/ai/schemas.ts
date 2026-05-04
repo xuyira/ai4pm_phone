@@ -45,6 +45,7 @@ export const jdResumeEvidenceItemSchema = z.object({
 const resumeBasicInfoSchema = z.object({
   name: z.string(),
   gender: z.string(),
+  age: z.string().default(""),
   phone: z.string(),
   email: z.string()
 });

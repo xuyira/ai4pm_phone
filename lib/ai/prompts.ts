@@ -311,6 +311,7 @@ export function buildResumeOptimizationInstructions() {
 1. basicInfo：基础信息
    - name
    - gender
+   - age
    - phone
    - email
 
@@ -337,6 +338,10 @@ export function buildResumeOptimizationInstructions() {
    - startDate
    - endDate
    - description：数组，每条为一句简历 bullet
+   - 每条 description 必须使用“**四字到六字总结词**：详细展开”的格式
+   - 总结词必须清晰概括动作或主题，例如：**场景洞察**：...、**功能设计**：...、**流程优化**：...、**体验复盘**：...、**用户分析**：...、**数据处理**：...
+   - 总结词要与该段经历内容真实匹配，避免空泛重复；同一段经历下尽量不要反复使用完全相同的总结词
+   - 冒号后再展开具体动作、对象、方法、结果，优先保持一句话完整、可验证、适合简历阅读
 
 5. projectExperience：项目经历，数组
    - projectName
@@ -344,6 +349,10 @@ export function buildResumeOptimizationInstructions() {
    - startDate
    - endDate
    - description：数组，每条为一句简历 bullet
+   - 每条 description 必须使用“**四字到六字总结词**：详细展开”的格式
+   - 总结词必须清晰概括动作或主题，例如：**场景洞察**：...、**功能设计**：...、**流程优化**：...、**体验复盘**：...、**用户分析**：...、**数据处理**：...
+   - 总结词要与该项目内容真实匹配，避免空泛重复；同一项目下尽量不要反复使用完全相同的总结词
+   - 冒号后再展开具体动作、对象、方法、结果，优先保持一句话完整、可验证、适合简历阅读
 
 6. achievements：成果与荣誉，数组
    - type

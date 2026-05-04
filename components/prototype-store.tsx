@@ -178,6 +178,7 @@ export type ResumeOptimizationFinalSummary = {
 export type ResumeProfileBasicInfo = {
   name: string;
   gender: string;
+  age: string;
   phone: string;
   email: string;
 };

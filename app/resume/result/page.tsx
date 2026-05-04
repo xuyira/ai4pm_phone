@@ -110,7 +110,16 @@ function ResumeResultContent() {
       }
       return isPlaceholderText(value) ? "" : normalizeText(value);
     };
-    const renderText = (value: string) => escapeHtml(value).replaceAll("\n", "<br/>");
+    const renderInlineRichText = (value: string) =>
+      escapeHtml(value)
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replaceAll("\n", "<br/>");
+    const renderBulletLines = (lines: string[]) =>
+      lines
+        .map((line) => cleanText(line))
+        .filter(Boolean)
+        .map((line) => `<div class="pdf-bullet">${renderInlineRichText(line)}</div>`)
+        .join("");
     const removeGpaFromDescription = (value: string) =>
       value
         .replace(/[；;，,、\s]*GPA[：:\s]*\d+(?:\.\d+)?\s*\/\s*\d+(?:\.\d+)?[；;，,、\s]*/gi, " ")
@@ -120,85 +129,71 @@ function ResumeResultContent() {
       body
         ? `<section class="pdf-section"><div class="pdf-section-title">${escapeHtml(title)}</div>${body}</section>`
         : "";
-    const renderEntries = (
+    const renderThreeColumnEntries = (
       items: Array<{
-        title: string;
         time: string;
-        subtitle?: string;
-        text?: string;
+        center: string;
+        right: string;
+        details?: string[];
       }>
     ) =>
       items
-        .filter((item) => {
-          const title = cleanText(item.title);
+        .map((item) => {
           const time = cleanText(item.time);
-          const subtitle = cleanText(item.subtitle);
-          const text = cleanText(item.text);
-          return Boolean(title || time || subtitle || text);
-        })
-        .map(
-          (item) => {
-            const title = cleanText(item.title);
-            const time = cleanText(item.time);
-            const subtitle = cleanText(item.subtitle);
-            const text = cleanText(item.text);
+          const center = cleanText(item.center);
+          const right = cleanText(item.right);
+          const details = (item.details ?? []).map((detail) => cleanText(detail)).filter(Boolean);
 
-            return `
-            <div class="pdf-entry">
-              ${title || time ? `
-              <div class="pdf-entry-head">
-                <div class="pdf-entry-title">${escapeHtml(title)}</div>
-                <div class="pdf-entry-time">${escapeHtml(time)}</div>
-              </div>
-              ` : ""}
-              ${subtitle ? `<div class="pdf-entry-subtitle">${escapeHtml(subtitle)}</div>` : ""}
-              ${text ? `<div class="pdf-entry-text">${renderText(text)}</div>` : ""}
-            </div>
-          `
+          if (!time && !center && !right && details.length === 0) {
+            return "";
           }
-        )
+
+          return `
+            <div class="pdf-entry">
+              <div class="pdf-entry-head pdf-entry-head-grid">
+                <div class="pdf-entry-time pdf-entry-time-left">${escapeHtml(time)}</div>
+                <div class="pdf-entry-title pdf-entry-title-center">${escapeHtml(center)}</div>
+                <div class="pdf-entry-right">${escapeHtml(right)}</div>
+              </div>
+              ${details.length ? `<div class="pdf-entry-details">${renderBulletLines(details)}</div>` : ""}
+            </div>
+          `;
+        })
         .join("");
 
-    const educationHtml = renderEntries(
+    const educationHtml = renderThreeColumnEntries(
       profile.education.map((item) => ({
-        title: item.school,
         time: `${item.startDate} - ${item.endDate}`,
-        subtitle: [item.degree, item.major].filter(Boolean).join("｜"),
-        text: [
-          item.college ? `学院：${item.college}` : "",
-          item.gpa ? `GPA：${item.gpa}` : "",
-          removeGpaFromDescription(item.description)
-        ]
-          .filter(Boolean)
-          .join("\n")
+        center: [item.school, [item.major, item.college].filter(Boolean).join("/")].filter(Boolean).join(" | "),
+        right: item.degree,
+        details: [item.gpa ? `GPA：${item.gpa}` : "", removeGpaFromDescription(item.description)]
       }))
     );
 
-    const workHtml = renderEntries(
+    const workHtml = renderThreeColumnEntries(
       profile.workExperience.map((item) => ({
-        title: item.company,
         time: `${item.startDate} - ${item.endDate}`,
-        subtitle: item.position,
-        text: item.description.filter((line) => !isPlaceholderText(line)).join("\n")
+        center: item.company,
+        right: item.position,
+        details: item.description.filter((line) => !isPlaceholderText(line))
       }))
     );
 
-    const projectHtml = renderEntries(
+    const projectHtml = renderThreeColumnEntries(
       profile.projectExperience.map((item) => ({
-        title: item.projectName,
         time: `${item.startDate} - ${item.endDate}`,
-        subtitle: item.role,
-        text: item.description.filter((line) => !isPlaceholderText(line)).join("\n")
+        center: item.projectName,
+        right: item.role,
+        details: item.description.filter((line) => !isPlaceholderText(line))
       }))
     );
 
-    const achievementHtml = renderEntries(
-      profile.achievements.map((item) => ({
-        title: item.name,
-        time: item.date,
-        subtitle: item.type,
-        text: item.description
-      }))
+    const achievementHtml = renderBulletLines(
+      profile.achievements.map((item) =>
+        [item.name, item.type ? `（${item.type}）` : "", item.date, item.description]
+          .filter((part) => cleanText(part))
+          .join(" ")
+      )
     );
 
     return `
@@ -215,77 +210,100 @@ function ResumeResultContent() {
               color: #2f2924;
             }
             .pdf-page {
-              width: 100%;
-              min-height: 100vh;
-              margin: 0;
+              width: 210mm;
+              height: 297mm;
+              margin: 0 auto;
               background: #fffdf9;
               box-sizing: border-box;
-              padding: 24px;
+              padding: 12mm 11mm 10mm;
+              overflow: hidden;
             }
             .pdf-header {
               border-bottom: 1px solid #d9cbb8;
-              padding-bottom: 10px;
+              padding-bottom: 6px;
             }
             .pdf-name {
-              font-size: 26px;
+              font-size: 22px;
               font-weight: 800;
               line-height: 1.1;
             }
             .pdf-contact {
-              margin-top: 10px;
-              font-size: 12px;
+              margin-top: 6px;
+              font-size: 10.5px;
               color: #5c5148;
               display: flex;
               flex-wrap: wrap;
-              gap: 8px 16px;
+              gap: 4px 12px;
             }
             .pdf-section {
-              margin-top: 16px;
+              margin-top: 9px;
             }
             .pdf-section-title {
-              font-size: 13px;
+              font-size: 11.5px;
               font-weight: 800;
-              padding-bottom: 5px;
+              padding-bottom: 3px;
               border-bottom: 1px solid #dfd4c3;
             }
             .pdf-inline-list {
-              margin-top: 8px;
-              font-size: 12px;
+              margin-top: 5px;
+              font-size: 10.5px;
               color: #4b433b;
               display: flex;
               flex-wrap: wrap;
-              gap: 8px 16px;
+              gap: 4px 12px;
             }
             .pdf-entry {
-              margin-top: 10px;
+              margin-top: 6px;
             }
             .pdf-entry-head {
               display: flex;
               justify-content: space-between;
-              gap: 12px;
+              gap: 8px;
               align-items: flex-start;
             }
+            .pdf-entry-head-grid {
+              display: grid;
+              grid-template-columns: 84px minmax(0, 1fr) auto;
+              align-items: start;
+            }
             .pdf-entry-title {
-              font-size: 13px;
+              font-size: 11px;
               font-weight: 700;
             }
+            .pdf-entry-title-center {
+              text-align: center;
+            }
             .pdf-entry-time {
-              font-size: 11px;
+              font-size: 10px;
               color: #7a6d61;
               white-space: nowrap;
             }
-            .pdf-entry-subtitle {
-              margin-top: 4px;
-              font-size: 12px;
+            .pdf-entry-time-left {
+              text-align: left;
+            }
+            .pdf-entry-right {
+              font-size: 10.5px;
               font-weight: 600;
               color: #4e453d;
+              text-align: right;
+              white-space: nowrap;
             }
-            .pdf-entry-text {
-              margin-top: 4px;
-              font-size: 12px;
-              line-height: 1.7;
+            .pdf-entry-details {
+              margin-top: 3px;
+            }
+            .pdf-bullet {
+              position: relative;
+              padding-left: 11px;
+              font-size: 10px;
+              line-height: 1.4;
               color: #4b433b;
               white-space: normal;
+            }
+            .pdf-bullet::before {
+              content: "•";
+              position: absolute;
+              left: 0;
+              top: 0;
             }
             @page {
               size: A4;
@@ -298,8 +316,8 @@ function ResumeResultContent() {
               .pdf-page {
                 margin: 0;
                 width: 210mm;
-                min-height: 297mm;
-                padding: 18mm 16mm;
+                height: 297mm;
+                padding: 12mm 11mm 10mm;
               }
             }
           </style>
@@ -310,6 +328,7 @@ function ResumeResultContent() {
               ${profile.basicInfo.name ? `<div class="pdf-name">${escapeHtml(profile.basicInfo.name)}</div>` : ""}
               <div class="pdf-contact">
                 ${profile.basicInfo.gender ? `<span>性别：${escapeHtml(profile.basicInfo.gender)}</span>` : ""}
+                ${profile.basicInfo.age ? `<span>年龄：${escapeHtml(profile.basicInfo.age)}</span>` : ""}
                 ${profile.basicInfo.phone ? `<span>电话：${escapeHtml(profile.basicInfo.phone)}</span>` : ""}
                 ${profile.basicInfo.email ? `<span>邮箱：${escapeHtml(profile.basicInfo.email)}</span>` : ""}
               </div>
@@ -467,12 +486,14 @@ function ResumeResultContent() {
             </div>
           </div>
           <div className="resume-pdf-frame" style={{ marginTop: 12 }}>
-            <iframe
-              ref={pdfFrameRef}
-              title="优化后简历PDF预览"
-              srcDoc={printableResumeHtml}
-              className="resume-pdf-iframe"
-            />
+            <div className="resume-pdf-canvas">
+              <iframe
+                ref={pdfFrameRef}
+                title="优化后简历PDF预览"
+                srcDoc={printableResumeHtml}
+                className="resume-pdf-iframe"
+              />
+            </div>
           </div>
         </div>
 
