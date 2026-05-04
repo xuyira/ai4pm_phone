@@ -24,7 +24,8 @@ export default function HomePage() {
               <>
                 {hasComingSoonLabel ? <span className="corner-label">{"\u3000暂未上线"}</span> : null}
                 <div className="home-feature-title" style={{ textAlign: "center" }}>
-                  {feature.title}
+                  <span style={{ display: "block" }}>AI</span>
+                  <span style={{ display: "block" }}>{feature.title.replace(/^AI/, "")}</span>
                 </div>
               </>
             );

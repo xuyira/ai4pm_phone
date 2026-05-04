@@ -25,22 +25,15 @@ export default function ResumeDiagnosisLoadingPage() {
     resumeDiagnosisStatus,
     setResumeDiagnosis,
     setResumeDiagnosisStatus,
-    updateResumeRecordStatus,
-    currentResumeRecordId,
-    getResumeRecord
+    updateResumeRecordStatus
   } = usePrototypeStore();
   const hasStarted = useRef(false);
   const isActive = useRef(true);
-  const pollingRef = useRef<number | null>(null);
-  const transientErrorCountRef = useRef(0);
 
   useEffect(() => {
     isActive.current = true;
     return () => {
       isActive.current = false;
-      if (pollingRef.current) {
-        window.clearTimeout(pollingRef.current);
-      }
     };
   }, []);
 
@@ -52,71 +45,7 @@ export default function ResumeDiagnosisLoadingPage() {
       return;
     }
 
-    const activeRecord = currentResumeRecordId ? getResumeRecord(currentResumeRecordId) : undefined;
-    const existingTaskId = activeRecord?.diagnosisTaskId || null;
-
-    const pollTask = (taskId: string) => {
-      void fetch(`/api/resume/tasks/${taskId}`)
-        .then(async (response) => {
-          transientErrorCountRef.current = 0;
-          const payload = (await response.json()) as {
-            detail?: string;
-            status?: "queued" | "running" | "completed" | "failed";
-            result?: ResumeDiagnosisResult;
-            error?: string | null;
-          };
-
-          if (!response.ok) {
-            throw new Error(payload.detail ?? "诊断任务状态获取失败");
-          }
-
-          if (payload.status === "completed" && payload.result) {
-            setResumeDiagnosis(payload.result);
-            if (isActive.current) {
-              router.replace("/resume/diagnosis-result");
-            }
-            return;
-          }
-
-          if (payload.status === "failed") {
-            const message = payload.error || "诊断失败，请重试。";
-            updateResumeRecordStatus("diagnose_failed", {
-              error: message,
-              diagnosisTaskId: null
-            });
-            setResumeDiagnosisStatus("failed", message);
-            return;
-          }
-
-          setResumeDiagnosisStatus("running");
-          pollingRef.current = window.setTimeout(() => pollTask(taskId), 2000);
-        })
-        .catch((error: Error) => {
-          transientErrorCountRef.current += 1;
-
-          if (transientErrorCountRef.current >= 6) {
-            updateResumeRecordStatus("diagnosing", {
-              error: "网络波动，正在继续重试…",
-              diagnosisTaskId: taskId
-            });
-          }
-
-          setResumeDiagnosisStatus("running");
-          pollingRef.current = window.setTimeout(
-            () => pollTask(taskId),
-            transientErrorCountRef.current >= 3 ? 4000 : 2000
-          );
-        });
-    };
-
-    if (existingTaskId) {
-      hasStarted.current = true;
-      setResumeDiagnosisStatus("running");
-      pollTask(existingTaskId);
-      return;
-    }
-
-    if (hasStarted.current) {
+    if (hasStarted.current || resumeDiagnosisStatus === "running") {
       return;
     }
 
@@ -128,9 +57,10 @@ export default function ResumeDiagnosisLoadingPage() {
 
     hasStarted.current = true;
     ensureResumeRecord("diagnosing");
+    updateResumeRecordStatus("diagnosing");
     setResumeDiagnosisStatus("running");
 
-    void fetch("/api/resume/tasks/diagnose", {
+    void fetch("/api/resume/diagnose", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -145,38 +75,42 @@ export default function ResumeDiagnosisLoadingPage() {
       })
     })
       .then(async (response) => {
-        const payload = (await response.json()) as {
-          detail?: string;
-          taskId?: string;
-        };
+        const rawText = await response.text();
+        let payload: { detail?: string; result?: ResumeDiagnosisResult } = {};
+
+        if (rawText) {
+          try {
+            payload = JSON.parse(rawText) as {
+              detail?: string;
+              result?: ResumeDiagnosisResult;
+            };
+          } catch {
+            payload = { detail: rawText };
+          }
+        }
 
         if (!response.ok) {
           throw new Error(payload.detail ?? "简历诊断失败");
         }
 
-        if (!payload.taskId) {
-          throw new Error(payload.detail ?? "简历诊断任务创建失败：服务端未返回任务ID。");
+        if (!payload.result) {
+          throw new Error(payload.detail ?? "简历诊断失败：服务端未返回结果。");
         }
 
-        updateResumeRecordStatus("diagnosing", {
-          diagnosisTaskId: payload.taskId,
-          error: null
-        });
-        pollTask(payload.taskId);
+        setResumeDiagnosis(payload.result);
+        if (isActive.current) {
+          router.replace("/resume/diagnosis-result");
+        }
       })
       .catch((error: Error) => {
-        updateResumeRecordStatus("diagnose_failed", {
-          error: error.message,
-          diagnosisTaskId: null
-        });
+        updateResumeRecordStatus("diagnose_failed", { error: error.message });
         setResumeDiagnosisStatus("failed", error.message);
       });
   }, [
-    currentResumeRecordId,
     ensureResumeRecord,
-    getResumeRecord,
     push,
     resumeDiagnosis,
+    resumeDiagnosisStatus,
     resumeDraft.extractedResume,
     resumeDraft.jobDescription,
     resumeDraft.jobTitle,
@@ -221,13 +155,14 @@ export default function ResumeDiagnosisLoadingPage() {
           <h2 className="section-title" style={{ marginBottom: 10 }}>
             AI正在诊断您的简历...
           </h2>
-          <p className="page-subtitle" style={{ marginTop: 0 }}>
-            预计需要1~2分钟
-          </p>
+          <div className="page-subtitle" style={{ marginTop: 0 }}>
+            <div>预计需要1~2分钟，请勿关闭或刷新当前网页</div>
+            <div style={{ marginTop: 10 }}>生成完成后，结果会自动保存到“我的记录”，后续可继续查看和操作</div>
+          </div>
         </div>
-        <p className="page-subtitle" style={{ marginTop: 12, marginBottom: 0 }}>
-          您可放心退出，稍后在"我的记录-AI简历优化"中查看
-        </p>
+        <Link href="/profile/records/resume" className="button-secondary">
+          查看我的记录-AI简历优化
+        </Link>
         {resumeDiagnosisStatus === "failed" ? (
           <div className="form-stack" style={{ width: "100%" }}>
             <div className="hint-banner">{resumeDiagnosisError || "诊断失败，请重试。"}</div>

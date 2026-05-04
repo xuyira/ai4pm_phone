@@ -346,8 +346,6 @@ export type ResumeFlowRecord = {
   quickSupplementAnswers: Record<string, string>;
   optimization: ResumeOptimizationResult | null;
   lastError: string | null;
-  diagnosisTaskId?: string | null;
-  optimizationTaskId?: string | null;
 };
 
 type PrototypeStoreValue = {
@@ -378,8 +376,6 @@ type PrototypeStoreValue = {
       optimization?: ResumeOptimizationResult | null;
       diagnosisActions?: ResumeDiagnosisActionInput[];
       quickSupplementAnswers?: Record<string, string>;
-      diagnosisTaskId?: string | null;
-      optimizationTaskId?: string | null;
     }
   ) => void;
   updateResumeDraft: (patch: Partial<ResumeDraft>) => void;
@@ -388,6 +384,14 @@ type PrototypeStoreValue = {
   setResumeDiagnosis: (result: ResumeDiagnosisResult) => void;
   setResumeDiagnosisActions: (actions: ResumeDiagnosisActionInput[]) => void;
   setResumeQuickSupplementAnswers: (answers: Record<string, string>) => void;
+  setResumeDiagnosisActionsForRecord: (
+    recordId: string,
+    actions: ResumeDiagnosisActionInput[]
+  ) => void;
+  setResumeQuickSupplementAnswersForRecord: (
+    recordId: string,
+    answers: Record<string, string>
+  ) => void;
   setResumeDiagnosisStatus: (status: ResumeOptimizationStatus, error?: string | null) => void;
   setResumeOptimization: (result: ResumeOptimizationResult) => void;
   setResumeOptimizationStatus: (
@@ -585,9 +589,7 @@ export function PrototypeStoreProvider({
       diagnosisActions: existingRecord?.diagnosisActions || [],
       quickSupplementAnswers: existingRecord?.quickSupplementAnswers || {},
       optimization: existingRecord?.optimization || null,
-      lastError: null,
-      diagnosisTaskId: existingRecord?.diagnosisTaskId || null,
-      optimizationTaskId: existingRecord?.optimizationTaskId || null
+      lastError: null
     };
 
     upsertResumeRecord(nextRecord);
@@ -604,8 +606,6 @@ export function PrototypeStoreProvider({
         optimization?: ResumeOptimizationResult | null;
         diagnosisActions?: ResumeDiagnosisActionInput[];
         quickSupplementAnswers?: Record<string, string>;
-        diagnosisTaskId?: string | null;
-        optimizationTaskId?: string | null;
       }
     ) => {
       if (!currentResumeRecordId) {
@@ -633,15 +633,7 @@ export function PrototypeStoreProvider({
                     options?.quickSupplementAnswers !== undefined
                       ? options.quickSupplementAnswers
                       : item.quickSupplementAnswers,
-                  lastError: options?.error ?? null,
-                  diagnosisTaskId:
-                    options?.diagnosisTaskId !== undefined
-                      ? options.diagnosisTaskId
-                      : item.diagnosisTaskId || null,
-                  optimizationTaskId:
-                    options?.optimizationTaskId !== undefined
-                      ? options.optimizationTaskId
-                      : item.optimizationTaskId || null
+                  lastError: options?.error ?? null
                 }
               : item
           )
@@ -678,9 +670,7 @@ export function PrototypeStoreProvider({
         diagnosisActions: [],
         quickSupplementAnswers: {},
         optimization: null,
-        lastError: null,
-        diagnosisTaskId: null,
-        optimizationTaskId: null
+        lastError: null
       });
     }
     setResumeDiagnosisState(null);
@@ -721,9 +711,7 @@ export function PrototypeStoreProvider({
       diagnosisActions: [],
       quickSupplementAnswers: {},
       optimization: null,
-      lastError: null,
-      diagnosisTaskId: null,
-      optimizationTaskId: null
+      lastError: null
     });
     setResumeDiagnosisState(null);
     setResumeDiagnosisActionsState([]);
@@ -760,9 +748,7 @@ export function PrototypeStoreProvider({
         diagnosisActions: [],
         quickSupplementAnswers: {},
         optimization: null,
-        lastError: null,
-        diagnosisTaskId: null,
-        optimizationTaskId: null
+        lastError: null
       });
     }
     setResumeDiagnosisState(null);
@@ -795,9 +781,7 @@ export function PrototypeStoreProvider({
         ? resumeRecords.find((item) => item.id === recordId)?.quickSupplementAnswers || {}
         : {},
       optimization: null,
-      lastError: null,
-      diagnosisTaskId: null,
-      optimizationTaskId: null
+      lastError: null
     };
 
     upsertResumeRecord(nextRecord);
@@ -826,6 +810,27 @@ export function PrototypeStoreProvider({
     );
   }, [currentResumeRecordId]);
 
+  const setResumeDiagnosisActionsForRecord = useCallback(
+    (recordId: string, actions: ResumeDiagnosisActionInput[]) => {
+      if (currentResumeRecordId === recordId) {
+        setResumeDiagnosisActionsState(actions);
+      }
+
+      setResumeRecords((current) =>
+        current.map((item) =>
+          item.id === recordId
+            ? {
+                ...item,
+                diagnosisActions: actions,
+                updatedAt: Date.now()
+              }
+            : item
+        )
+      );
+    },
+    [currentResumeRecordId]
+  );
+
   const setResumeQuickSupplementAnswers = useCallback((answers: Record<string, string>) => {
     setResumeQuickSupplementAnswersState(answers);
     if (!currentResumeRecordId) {
@@ -844,6 +849,27 @@ export function PrototypeStoreProvider({
       )
     );
   }, [currentResumeRecordId]);
+
+  const setResumeQuickSupplementAnswersForRecord = useCallback(
+    (recordId: string, answers: Record<string, string>) => {
+      if (currentResumeRecordId === recordId) {
+        setResumeQuickSupplementAnswersState(answers);
+      }
+
+      setResumeRecords((current) =>
+        current.map((item) =>
+          item.id === recordId
+            ? {
+                ...item,
+                quickSupplementAnswers: answers,
+                updatedAt: Date.now()
+              }
+            : item
+        )
+      );
+    },
+    [currentResumeRecordId]
+  );
 
   const setResumeDiagnosisStatus = useCallback(
     (status: ResumeOptimizationStatus, error?: string | null) => {
@@ -887,9 +913,7 @@ export function PrototypeStoreProvider({
           ? resumeQuickSupplementAnswers
           : existingRecord?.quickSupplementAnswers || {},
       optimization: result,
-      lastError: null,
-      diagnosisTaskId: null,
-      optimizationTaskId: null
+      lastError: null
     };
 
     upsertResumeRecord(nextRecord);
@@ -973,14 +997,12 @@ export function PrototypeStoreProvider({
     setResumeQuickSupplementAnswersState(record.quickSupplementAnswers || {});
     setResumeDiagnosisStatusState(
       record.status === "uploaded" || record.status === "diagnosing"
-        ? "running"
+        ? "idle"
         : record.status === "diagnose_failed"
           ? "failed"
           : record.diagnosis
             ? "completed"
-            : record.diagnosisTaskId
-              ? "running"
-              : "idle"
+            : "idle"
     );
     setResumeDiagnosisError(
       record.status === "diagnose_failed" ? record.lastError || "诊断失败，请重试。" : null
@@ -988,14 +1010,12 @@ export function PrototypeStoreProvider({
     setResumeOptimizationState(record.optimization);
     setResumeOptimizationStatusState(
       record.status === "optimizing"
-        ? "running"
+        ? "idle"
         : record.status === "optimize_failed"
           ? "failed"
           : record.optimization
             ? "completed"
-            : record.optimizationTaskId
-              ? "running"
-              : "idle"
+            : "idle"
     );
     setResumeOptimizationError(
       record.status === "optimize_failed" ? record.lastError || "优化失败，请重试。" : null
@@ -1037,6 +1057,8 @@ export function PrototypeStoreProvider({
       setResumeDiagnosis,
       setResumeDiagnosisActions,
       setResumeQuickSupplementAnswers,
+      setResumeDiagnosisActionsForRecord,
+      setResumeQuickSupplementAnswersForRecord,
       setResumeDiagnosisStatus,
       setResumeOptimization,
       setResumeOptimizationStatus,

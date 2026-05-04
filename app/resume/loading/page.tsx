@@ -27,21 +27,15 @@ export default function ResumeLoadingPage() {
     resumeOptimizationStatus,
     setResumeOptimization,
     setResumeOptimizationStatus,
-    updateResumeRecordStatus,
-    currentResumeRecordId,
-    getResumeRecord
+    updateResumeRecordStatus
   } = usePrototypeStore();
   const hasStarted = useRef(false);
   const isActive = useRef(true);
-  const pollingRef = useRef<number | null>(null);
 
   useEffect(() => {
     isActive.current = true;
     return () => {
       isActive.current = false;
-      if (pollingRef.current) {
-        window.clearTimeout(pollingRef.current);
-      }
     };
   }, []);
 
@@ -53,61 +47,7 @@ export default function ResumeLoadingPage() {
       return;
     }
 
-    const activeRecord = currentResumeRecordId ? getResumeRecord(currentResumeRecordId) : undefined;
-    const existingTaskId = activeRecord?.optimizationTaskId || null;
-
-    const pollTask = (taskId: string) => {
-      void fetch(`/api/resume/tasks/${taskId}`)
-        .then(async (response) => {
-          const payload = (await response.json()) as {
-            detail?: string;
-            status?: "queued" | "running" | "completed" | "failed";
-            result?: ResumeOptimizationResult;
-            error?: string | null;
-          };
-
-          if (!response.ok) {
-            throw new Error(payload.detail ?? "优化任务状态获取失败");
-          }
-
-          if (payload.status === "completed" && payload.result) {
-            setResumeOptimization(payload.result);
-            if (isActive.current) {
-              router.replace("/resume/result");
-            }
-            return;
-          }
-
-          if (payload.status === "failed") {
-            const message = payload.error || "优化失败，请重试。";
-            updateResumeRecordStatus("optimize_failed", {
-              error: message,
-              optimizationTaskId: null
-            });
-            setResumeOptimizationStatus("failed", message);
-            return;
-          }
-
-          setResumeOptimizationStatus("running");
-          pollingRef.current = window.setTimeout(() => pollTask(taskId), 2000);
-        })
-        .catch((error: Error) => {
-          updateResumeRecordStatus("optimize_failed", {
-            error: error.message,
-            optimizationTaskId: null
-          });
-          setResumeOptimizationStatus("failed", error.message);
-        });
-    };
-
-    if (existingTaskId) {
-      hasStarted.current = true;
-      setResumeOptimizationStatus("running");
-      pollTask(existingTaskId);
-      return;
-    }
-
-    if (hasStarted.current) {
+    if (hasStarted.current || resumeOptimizationStatus === "running") {
       return;
     }
 
@@ -119,9 +59,10 @@ export default function ResumeLoadingPage() {
 
     hasStarted.current = true;
     ensureResumeRecord("optimizing");
+    updateResumeRecordStatus("optimizing");
     setResumeOptimizationStatus("running");
 
-    void fetch("/api/resume/tasks/optimize", {
+    void fetch("/api/resume/optimize", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -138,41 +79,45 @@ export default function ResumeLoadingPage() {
       })
     })
       .then(async (response) => {
-        const payload = (await response.json()) as {
-          detail?: string;
-          taskId?: string;
-        };
+        const rawText = await response.text();
+        let payload: { detail?: string; result?: ResumeOptimizationResult } = {};
+
+        if (rawText) {
+          try {
+            payload = JSON.parse(rawText) as {
+              detail?: string;
+              result?: ResumeOptimizationResult;
+            };
+          } catch {
+            payload = { detail: rawText };
+          }
+        }
 
         if (!response.ok) {
           throw new Error(payload.detail ?? "简历优化失败");
         }
 
-        if (!payload.taskId) {
-          throw new Error(payload.detail ?? "简历优化任务创建失败：服务端未返回任务ID。");
+        if (!payload.result) {
+          throw new Error(payload.detail ?? "简历优化失败：服务端未返回结果。");
         }
 
-        updateResumeRecordStatus("optimizing", {
-          optimizationTaskId: payload.taskId,
-          error: null
-        });
-        pollTask(payload.taskId);
+        setResumeOptimization(payload.result);
+        if (isActive.current) {
+          router.replace("/resume/result");
+        }
       })
       .catch((error: Error) => {
-        updateResumeRecordStatus("optimize_failed", {
-          error: error.message,
-          optimizationTaskId: null
-        });
+        updateResumeRecordStatus("optimize_failed", { error: error.message });
         setResumeOptimizationStatus("failed", error.message);
       });
   }, [
-    currentResumeRecordId,
     ensureResumeRecord,
-    getResumeRecord,
     push,
     resumeDiagnosis,
     resumeDiagnosisActions,
     resumeQuickSupplementAnswers,
     resumeOptimization,
+    resumeOptimizationStatus,
     router,
     setResumeOptimization,
     setResumeOptimizationStatus,
@@ -214,19 +159,17 @@ export default function ResumeLoadingPage() {
           <h2 className="section-title" style={{ marginBottom: 10 }}>
             AI正在优化您的简历...
           </h2>
-          <p
+          <div
             className="page-subtitle"
             style={{ marginTop: 0, wordBreak: "break-word", overflowWrap: "anywhere" }}
           >
-            预计需要1~2分钟
-          </p>
+            <div>预计需要1~2分钟，请勿关闭或刷新当前网页</div>
+            <div style={{ marginTop: 10 }}>生成完成后，结果会自动保存到“我的记录”，后续可继续查看和操作</div>
+          </div>
         </div>
-        <p
-          className="page-subtitle"
-          style={{ marginTop: 12, marginBottom: 0, wordBreak: "break-word", overflowWrap: "anywhere" }}
-        >
-          您可放心退出，稍后在"我的记录-AI简历优化"中查看
-        </p>
+        <Link href="/profile/records/resume" className="button-secondary">
+          查看我的记录-AI简历优化
+        </Link>
         {resumeOptimizationStatus === "failed" ? (
           <Link href="/resume/upload" className="button-secondary">
             返回修改并重试

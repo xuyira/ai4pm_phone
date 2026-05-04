@@ -60,11 +60,18 @@ export default function ProfileRecordListPage() {
         {items.length > 0 ? (
           <div className="list-card">
             {items.map((item) => (
-              <button
+              <div
                 key={item.id}
-                type="button"
                 className="record-item profile-resume-row"
+                role="button"
+                tabIndex={0}
                 onClick={() => router.push(item.route)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    router.push(item.route);
+                  }
+                }}
               >
                 <div className="record-meta" style={{ minWidth: 0 }}>
                   <span className="record-title" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -100,7 +107,7 @@ export default function ProfileRecordListPage() {
                     {getStatusCopy(item.status)}
                   </span>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         ) : (

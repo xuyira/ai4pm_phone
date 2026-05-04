@@ -45,8 +45,10 @@ function ResumeDiagnosisResultContent() {
     resumeDiagnosis,
     resumeDiagnosisActions,
     setResumeDiagnosisActions,
+    setResumeDiagnosisActionsForRecord,
     resumeQuickSupplementAnswers,
-    setResumeQuickSupplementAnswers
+    setResumeQuickSupplementAnswers,
+    setResumeQuickSupplementAnswersForRecord
   } = usePrototypeStore();
   const [resumeExpanded, setResumeExpanded] = useState(false);
   const [jobExpanded, setJobExpanded] = useState(false);
@@ -110,6 +112,11 @@ function ResumeDiagnosisResultContent() {
         dimension,
         userComment
       });
+    }
+
+    if (recordId) {
+      setResumeDiagnosisActionsForRecord(recordId, nextActions);
+      return;
     }
 
     setResumeDiagnosisActions(nextActions);
@@ -285,12 +292,19 @@ function ResumeDiagnosisResultContent() {
                               rows={4}
                               placeholder="请直接补充这条信息，便于后续优化时使用..."
                               value={savedQuickAnswers[question.id] || ""}
-                              onChange={(event) =>
-                                setResumeQuickSupplementAnswers({
+                              onChange={(event) => {
+                                const nextAnswers = {
                                   ...savedQuickAnswers,
                                   [question.id]: event.target.value
-                                })
-                              }
+                                };
+
+                                if (recordId) {
+                                  setResumeQuickSupplementAnswersForRecord(recordId, nextAnswers);
+                                  return;
+                                }
+
+                                setResumeQuickSupplementAnswers(nextAnswers);
+                              }}
                             />
                           )}
                         </div>
@@ -325,12 +339,19 @@ function ResumeDiagnosisResultContent() {
                         rows={4}
                         placeholder="例如：补充项目背景、真实数据、投递偏好或想强调的经历..."
                         value={savedQuickAnswers.__custom || ""}
-                        onChange={(event) =>
-                          setResumeQuickSupplementAnswers({
+                        onChange={(event) => {
+                          const nextAnswers = {
                             ...savedQuickAnswers,
                             __custom: event.target.value
-                          })
-                        }
+                          };
+
+                          if (recordId) {
+                            setResumeQuickSupplementAnswersForRecord(recordId, nextAnswers);
+                            return;
+                          }
+
+                          setResumeQuickSupplementAnswers(nextAnswers);
+                        }}
                       />
                     )}
                   </div>
