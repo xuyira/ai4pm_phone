@@ -26,12 +26,14 @@ export function StepStrip({
   steps,
   active,
   onStepClick,
-  isStepClickable
+  isStepClickable,
+  stepStates
 }: {
   steps: string[];
   active: number;
   onStepClick?: (index: number) => void;
   isStepClickable?: (index: number) => boolean;
+  stepStates?: Array<"pending" | "current" | "done">;
 }) {
   return (
     <div className="step-strip">
@@ -39,7 +41,7 @@ export function StepStrip({
         <button
           type="button"
           key={label}
-          className={`step${index === active ? " is-active" : ""}${isStepClickable?.(index) ? " is-clickable" : ""}`}
+          className={`step step-${stepStates?.[index] ?? (index === active ? "current" : "pending")}${isStepClickable?.(index) ? " is-clickable" : ""}`}
           onClick={() => {
             if (isStepClickable?.(index) && onStepClick) {
               onStepClick(index);

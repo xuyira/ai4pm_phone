@@ -348,6 +348,75 @@ export type ResumeFlowRecord = {
   lastError: string | null;
 };
 
+export function getResumeRecordTimelineLevel(record?: ResumeFlowRecord | null) {
+  switch (record?.status) {
+    case "diagnosing":
+    case "diagnosed":
+    case "diagnose_failed":
+      return 1;
+    case "optimizing":
+    case "optimized":
+    case "optimize_failed":
+      return 2;
+    default:
+      return 0;
+  }
+}
+
+export function getResumeRecordStepTarget(
+  record: ResumeFlowRecord | undefined,
+  index: number
+): "upload" | "diagnosis-loading" | "diagnosis-result" | "optimization-loading" | "optimization-result" | null {
+  if (!record) {
+    return index === 0 ? "upload" : null;
+  }
+
+  if (index === 0) {
+    return "upload";
+  }
+
+  if (index === 1) {
+    if (record.status === "diagnosing" || record.status === "diagnose_failed") {
+      return "diagnosis-loading";
+    }
+
+    return "diagnosis-result";
+  }
+
+  if (index === 2) {
+    if (record.status === "optimizing" || record.status === "optimize_failed") {
+      return "optimization-loading";
+    }
+
+    return "optimization-result";
+  }
+
+  return null;
+}
+
+export function getResumeRecordStepStates(
+  record?: ResumeFlowRecord | null,
+  fallbackActive = 0
+): Array<"pending" | "current" | "done"> {
+  if (!record) {
+    return [0, 1, 2].map((index) => (index === fallbackActive ? "current" : "pending"));
+  }
+
+  switch (record.status) {
+    case "diagnosing":
+    case "diagnosed":
+    case "diagnose_failed":
+      return ["done", "current", "pending"];
+    case "optimizing":
+    case "optimize_failed":
+      return ["done", "done", "current"];
+    case "optimized":
+      return ["done", "done", "done"];
+    default:
+      return ["current", "pending", "pending"];
+  }
+}
+
 type PrototypeStoreValue = {
   isHydrated: boolean;
   currentResumeRecordId: string | null;
@@ -726,35 +795,34 @@ export function PrototypeStoreProvider({
   }, [currentResumeRecordId, resumeDraft, resumeRecords, upsertResumeRecord]);
 
   const setResumeExtraction = useCallback((extraction: ResumeExtraction) => {
-    const now = Date.now();
     const existingRecord = currentResumeRecordId
       ? resumeRecords.find((item) => item.id === currentResumeRecordId)
       : undefined;
     const shouldKeepRecord = shouldKeepDraftBoundRecord(existingRecord?.status);
-    const recordId =
-      shouldKeepRecord && existingRecord ? existingRecord.id : `resume-${now}`;
     const nextDraft = {
       ...resumeDraft,
       extractedResume: extraction
     };
 
-    setCurrentResumeRecordId(recordId);
+    if (!shouldKeepRecord) {
+      setCurrentResumeRecordId(null);
+    }
     setResumeDraft(nextDraft);
-    upsertResumeRecord({
-      id: recordId,
-      type: "resume",
-      jobTitle: nextDraft.jobTitle.trim() || existingRecord?.jobTitle || "",
-      title: nextDraft.jobTitle.trim() || existingRecord?.title || "历史记录",
-      timestamp: existingRecord?.timestamp || formatTimestamp(new Date(now)),
-      updatedAt: now,
-      status: "uploaded",
-      draft: cloneDraft(nextDraft),
-      diagnosis: null,
-      diagnosisActions: [],
-      quickSupplementAnswers: {},
-      optimization: null,
-      lastError: null
-    });
+    if (existingRecord && shouldKeepRecord) {
+      upsertResumeRecord({
+        ...existingRecord,
+        status: "uploaded",
+        updatedAt: Date.now(),
+        jobTitle: nextDraft.jobTitle.trim() || existingRecord.jobTitle,
+        title: nextDraft.jobTitle.trim() || existingRecord.title || "历史记录",
+        draft: cloneDraft(nextDraft),
+        diagnosis: null,
+        diagnosisActions: [],
+        quickSupplementAnswers: {},
+        optimization: null,
+        lastError: null
+      });
+    }
     setResumeDiagnosisState(null);
     setResumeDiagnosisActionsState([]);
     setResumeQuickSupplementAnswersState({});
@@ -1056,8 +1124,10 @@ export function PrototypeStoreProvider({
     setResumeDiagnosisActionsState(record.diagnosisActions);
     setResumeQuickSupplementAnswersState(record.quickSupplementAnswers || {});
     setResumeDiagnosisStatusState(
-      record.status === "uploaded" || record.status === "diagnosing"
+      record.status === "uploaded"
         ? "idle"
+        : record.status === "diagnosing"
+          ? "running"
         : record.status === "diagnose_failed"
           ? "failed"
           : record.diagnosis
@@ -1070,7 +1140,7 @@ export function PrototypeStoreProvider({
     setResumeOptimizationState(record.optimization);
     setResumeOptimizationStatusState(
       record.status === "optimizing"
-        ? "idle"
+        ? "running"
         : record.status === "optimize_failed"
           ? "failed"
           : record.optimization

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { usePrototypeStore } from "@/components/prototype-store";
 
 const items = [
@@ -11,6 +11,7 @@ const items = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { clearResumeDraft } = usePrototypeStore();
 
   return (
@@ -24,9 +25,13 @@ export function BottomNav() {
             key={item.href}
             href={item.href}
             className={`bottom-link${isActive ? " is-active" : ""}`}
-            onClick={() => {
+            onClick={(event) => {
               if (item.href === "/") {
-                clearResumeDraft();
+                event.preventDefault();
+                router.push("/");
+                setTimeout(() => {
+                  clearResumeDraft();
+                }, 0);
               }
             }}
           >

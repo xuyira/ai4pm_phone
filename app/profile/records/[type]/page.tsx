@@ -29,16 +29,24 @@ export default function ProfileRecordListPage() {
   const items = getRecordsByType(type);
 
   const getStatusCopy = (status: RecordItem["status"]) => {
-    if (status === "uploaded" || status === "diagnosing" || status === "diagnose_failed") {
-      return "已上传";
+    if (status === "diagnosing") {
+      return "诊断中";
     }
 
     if (status === "diagnosed") {
       return "已诊断";
     }
 
-    if (status === "optimized" || status === "optimizing" || status === "optimize_failed") {
+    if (status === "optimizing") {
+      return "优化中";
+    }
+
+    if (status === "optimized") {
       return "已优化";
+    }
+
+    if (status === "uploaded" || status === "diagnose_failed" || status === "optimize_failed") {
+      return "已上传";
     }
 
     return "已完成";
@@ -97,10 +105,16 @@ export default function ProfileRecordListPage() {
                   </button>
                   <span
                     className={`pill ${
-                      item.status === "optimized" || item.status === "optimizing" || item.status === "optimize_failed"
+                      item.status === "optimizing"
+                        ? "pill-status-diagnosed"
+                        : item.status === "optimized"
                         ? "pill-status-optimized"
                         : item.status === "diagnosed"
                           ? "pill-status-diagnosed"
+                          : item.status === "diagnosing"
+                            ? "pill-status-uploaded"
+                            : item.status === "uploaded" || item.status === "diagnose_failed" || item.status === "optimize_failed"
+                              ? "pill-status-uploaded"
                           : "pill-status-uploaded"
                     }`}
                   >

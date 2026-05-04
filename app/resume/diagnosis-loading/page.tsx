@@ -7,6 +7,9 @@ import { useEffect, useRef } from "react";
 import { ExpandableInfoBox } from "@/components/interactive";
 import {
   type ResumeDiagnosisResult,
+  getResumeRecordStepStates,
+  getResumeRecordStepTarget,
+  getResumeRecordTimelineLevel,
   usePrototypeStore
 } from "@/components/prototype-store";
 import { useToast } from "@/components/toast";
@@ -18,7 +21,9 @@ export default function ResumeDiagnosisLoadingPage() {
   const [resumeExpanded, setResumeExpanded] = useState(false);
   const [jobExpanded, setJobExpanded] = useState(false);
   const {
+    currentResumeRecordId,
     ensureResumeRecord,
+    getResumeRecord,
     resumeDraft,
     resumeDiagnosis,
     resumeDiagnosisError,
@@ -29,6 +34,12 @@ export default function ResumeDiagnosisLoadingPage() {
   } = usePrototypeStore();
   const hasStarted = useRef(false);
   const isActive = useRef(true);
+  const activeRecordId = currentResumeRecordId;
+  const record = activeRecordId ? getResumeRecord(activeRecordId) : undefined;
+  const timelineLevel = getResumeRecordTimelineLevel(record);
+  const canViewUpload = timelineLevel >= 0;
+  const canViewDiagnosis = timelineLevel >= 1;
+  const canViewOptimization = timelineLevel >= 2;
 
   useEffect(() => {
     isActive.current = true;
@@ -126,11 +137,48 @@ export default function ResumeDiagnosisLoadingPage() {
   return (
     <div>
       <section className="section">
-        <h1 className="section-title" style={{ textAlign: "center" }}>
+        <h1 className="section-title" style={{ textAlign: "center", whiteSpace: "nowrap" }}>
           AI简历诊断
         </h1>
       </section>
-      <StepStrip steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]} active={1} />
+      <StepStrip
+        steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]}
+        active={1}
+        onStepClick={(index) => {
+          if (!activeRecordId || !record) {
+            return;
+          }
+
+          const target = getResumeRecordStepTarget(record, index);
+          if (target === "upload") {
+            router.replace(`/resume/upload?recordId=${activeRecordId}&readonly=1`);
+            return;
+          }
+
+          if (target === "diagnosis-loading") {
+            router.replace(`/resume/diagnosis-loading?recordId=${activeRecordId}&readonly=1`);
+            return;
+          }
+
+          if (target === "diagnosis-result") {
+            router.replace(`/resume/diagnosis-result?recordId=${activeRecordId}&readonly=1`);
+            return;
+          }
+
+          if (target === "optimization-loading") {
+            router.replace(`/resume/loading?recordId=${activeRecordId}&readonly=1`);
+            return;
+          }
+
+          if (target === "optimization-result") {
+            router.replace(`/resume/result?recordId=${activeRecordId}&readonly=1`);
+          }
+        }}
+        stepStates={getResumeRecordStepStates(record, 1)}
+        isStepClickable={(index) =>
+          index === 0 ? canViewUpload : index === 1 ? canViewDiagnosis : canViewOptimization
+        }
+      />
 
       <section className="section form-stack">
         <ExpandableInfoBox

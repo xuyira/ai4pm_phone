@@ -1,11 +1,15 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ExpandableInfoBox } from "@/components/interactive";
 import { ScoreRadar } from "@/components/resume-analytics";
-import { usePrototypeStore } from "@/components/prototype-store";
+import {
+  getResumeRecordStepStates,
+  getResumeRecordStepTarget,
+  getResumeRecordTimelineLevel,
+  usePrototypeStore
+} from "@/components/prototype-store";
 import { StepStrip } from "@/components/ui";
 
 const dimensionMeta = [
@@ -38,6 +42,7 @@ function ResumeDiagnosisResultContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const readonly = searchParams.get("readonly") === "1";
+  const isEditMode = searchParams.get("edit") === "1";
   const recordId = searchParams.get("recordId");
   const {
     currentResumeRecordId,
@@ -65,9 +70,31 @@ function ResumeDiagnosisResultContent() {
   const savedDiagnosisActions = linkedRecord?.diagnosisActions ?? resumeDiagnosisActions;
   const savedQuickAnswers = linkedRecord?.quickSupplementAnswers ?? resumeQuickSupplementAnswers;
   const visibleQuickQuestions = diagnosis?.quickSupplementQuestions ?? [];
-  const hasOptimization = Boolean(linkedRecord?.optimization);
-  const isReadonlyReview = readonly || hasOptimization;
-  const progressLevel = hasOptimization ? 2 : diagnosis ? 1 : 0;
+  const timelineLevel = getResumeRecordTimelineLevel(linkedRecord);
+  const isReadonlyReview = readonly || (Boolean(linkedRecord) && !isEditMode);
+  const isDiagnosedRecord = linkedRecord?.status === "diagnosed";
+  const canViewUpload = timelineLevel >= 0;
+  const canViewDiagnosis = timelineLevel >= 1;
+  const canViewOptimization = timelineLevel >= 2;
+  const [draftDiagnosisActions, setDraftDiagnosisActions] = useState(resumeDiagnosisActions);
+  const [draftQuickAnswers, setDraftQuickAnswers] = useState(resumeQuickSupplementAnswers);
+
+  useEffect(() => {
+    if (!isEditMode) {
+      setDraftDiagnosisActions(savedDiagnosisActions);
+      setDraftQuickAnswers(savedQuickAnswers);
+      return;
+    }
+
+    setDraftDiagnosisActions(savedDiagnosisActions);
+    setDraftQuickAnswers(savedQuickAnswers);
+  }, [isEditMode, savedDiagnosisActions, savedQuickAnswers, recordId]);
+
+  useEffect(() => {
+    if (isEditMode && activeRecordId) {
+      router.replace(`/resume/diagnosis-result?recordId=${activeRecordId}&edit=1`);
+    }
+  }, [activeRecordId, isEditMode, router]);
 
   useEffect(() => {
     if (!recordId && !readonly && resumeOptimization) {
@@ -109,10 +136,12 @@ function ResumeDiagnosisResultContent() {
   };
 
   const getDiagnosisActionComment = (dimension: string) =>
-    savedDiagnosisActions.find((item) => item.dimension === dimension)?.userComment || "";
+    (isEditMode ? draftDiagnosisActions : savedDiagnosisActions).find((item) => item.dimension === dimension)
+      ?.userComment || "";
 
   const updateDiagnosisActionComment = (dimension: string, userComment: string) => {
-    const nextActions = [...savedDiagnosisActions];
+    const sourceActions = isEditMode ? draftDiagnosisActions : savedDiagnosisActions;
+    const nextActions = [...sourceActions];
     const targetIndex = nextActions.findIndex((item) => item.dimension === dimension);
 
     if (targetIndex >= 0) {
@@ -125,6 +154,11 @@ function ResumeDiagnosisResultContent() {
         dimension,
         userComment
       });
+    }
+
+    if (isEditMode) {
+      setDraftDiagnosisActions(nextActions);
+      return;
     }
 
     if (activeRecordId) {
@@ -145,6 +179,18 @@ function ResumeDiagnosisResultContent() {
       return;
     }
 
+    if (isEditMode && activeRecordId) {
+      const nextId = createResumeRewriteRecord(activeRecordId, "diagnosis");
+      if (!nextId) {
+        return;
+      }
+
+      setResumeDiagnosisActions(draftDiagnosisActions);
+      setResumeQuickSupplementAnswers(draftQuickAnswers);
+      router.push("/resume/loading");
+      return;
+    }
+
     setResumeQuickSupplementAnswers(savedQuickAnswers);
     router.push("/resume/loading");
   };
@@ -154,38 +200,41 @@ function ResumeDiagnosisResultContent() {
       return;
     }
 
-    const nextId = createResumeRewriteRecord(activeRecordId, "diagnosis");
-    if (!nextId) {
-      return;
-    }
-
-    router.replace("/resume/diagnosis-result");
+    router.replace(`/resume/diagnosis-result?recordId=${activeRecordId}&edit=1`);
   };
 
   const handleStepClick = (index: number) => {
-    if (activeRecordId && diagnosis) {
-      if (index === 0) {
-        router.replace(`/resume/upload?recordId=${activeRecordId}&readonly=1`);
-        return;
-      }
-
-      if (index === 1 && progressLevel >= 1) {
-        router.replace(
-          hasOptimization
-            ? `/resume/diagnosis-result?recordId=${activeRecordId}&readonly=1`
-            : `/resume/diagnosis-result?recordId=${activeRecordId}`
-        );
-        return;
-      }
-
-      if (index === 2 && progressLevel >= 2) {
-        router.replace(`/resume/result?recordId=${activeRecordId}&readonly=1`);
-      }
+    if (!activeRecordId || !linkedRecord) {
       return;
     }
 
-    if (index === 0) {
-      router.push("/resume/upload");
+    const target = getResumeRecordStepTarget(linkedRecord, index);
+    if (!target) {
+      return;
+    }
+
+    if (target === "upload") {
+      router.replace(`/resume/upload?recordId=${activeRecordId}&readonly=1`);
+      return;
+    }
+
+    if (target === "diagnosis-loading") {
+      router.replace(`/resume/diagnosis-loading?recordId=${activeRecordId}&readonly=1`);
+      return;
+    }
+
+    if (target === "diagnosis-result") {
+      router.replace(`/resume/diagnosis-result?recordId=${activeRecordId}&readonly=1`);
+      return;
+    }
+
+    if (target === "optimization-loading") {
+      router.replace(`/resume/loading?recordId=${activeRecordId}&readonly=1`);
+      return;
+    }
+
+    if (target === "optimization-result") {
+      router.replace(`/resume/result?recordId=${activeRecordId}&readonly=1`);
     }
   };
 
@@ -198,44 +247,23 @@ function ResumeDiagnosisResultContent() {
     return null;
   }
 
-  const canViewOptimization = hasOptimization;
-
   return (
     <div>
       <section className="section">
-        <div style={{ display: "grid", gridTemplateColumns: "32px 1fr 32px", alignItems: "center", gap: 8 }}>
-          {isReadonlyReview && activeRecordId ? (
-            <Link
-              href="/profile/records/resume"
-              className="button-ghost"
-              style={{ textAlign: "center", padding: 0 }}
-            >
-              &lt;
-            </Link>
-          ) : (
-            <span />
-          )}
-          <h1 className="section-title" style={{ textAlign: "center", margin: 0 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", alignItems: "center" }}>
+          <h1 className="section-title" style={{ textAlign: "center", margin: 0, whiteSpace: "nowrap" }}>
             AI简历诊断结果
           </h1>
-          {canViewOptimization ? (
-            <Link
-              href={`/resume/result?recordId=${activeRecordId}&readonly=1`}
-              className="button-ghost"
-              style={{ textAlign: "center", padding: 0 }}
-            >
-              &gt;
-            </Link>
-          ) : (
-            <span />
-          )}
         </div>
       </section>
       <StepStrip
         steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]}
         active={1}
         onStepClick={handleStepClick}
-        isStepClickable={(index) => index <= progressLevel}
+        stepStates={getResumeRecordStepStates(linkedRecord, 1)}
+        isStepClickable={(index) =>
+          index === 0 ? canViewUpload : index === 1 ? canViewDiagnosis : canViewOptimization
+        }
       />
 
       <section className="section form-stack">
@@ -361,9 +389,14 @@ function ResumeDiagnosisResultContent() {
                               value={savedQuickAnswers[question.id] || ""}
                               onChange={(event) => {
                                 const nextAnswers = {
-                                  ...savedQuickAnswers,
+                                  ...(isEditMode ? draftQuickAnswers : savedQuickAnswers),
                                   [question.id]: event.target.value
                                 };
+
+                                if (isEditMode) {
+                                  setDraftQuickAnswers(nextAnswers);
+                                  return;
+                                }
 
                                 if (activeRecordId) {
                                   setResumeQuickSupplementAnswersForRecord(activeRecordId, nextAnswers);
@@ -408,9 +441,14 @@ function ResumeDiagnosisResultContent() {
                         value={savedQuickAnswers.__custom || ""}
                         onChange={(event) => {
                           const nextAnswers = {
-                            ...savedQuickAnswers,
+                            ...(isEditMode ? draftQuickAnswers : savedQuickAnswers),
                             __custom: event.target.value
                           };
+
+                          if (isEditMode) {
+                            setDraftQuickAnswers(nextAnswers);
+                            return;
+                          }
 
                           if (activeRecordId) {
                             setResumeQuickSupplementAnswersForRecord(activeRecordId, nextAnswers);
@@ -429,7 +467,7 @@ function ResumeDiagnosisResultContent() {
         </div>
       </section>
 
-      {!isReadonlyReview ? (
+      {!isReadonlyReview || isDiagnosedRecord ? (
         <section className="section">
           <button type="button" className="button" onClick={handleStartOptimization}>
             开始AI简历优化

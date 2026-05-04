@@ -1,10 +1,14 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CompareScoreRadar } from "@/components/resume-analytics";
-import { usePrototypeStore } from "@/components/prototype-store";
+import {
+  getResumeRecordStepStates,
+  getResumeRecordStepTarget,
+  getResumeRecordTimelineLevel,
+  usePrototypeStore
+} from "@/components/prototype-store";
 import { ExpandableInfoBox } from "@/components/interactive";
 import { useToast } from "@/components/toast";
 import { StepStrip } from "@/components/ui";
@@ -32,7 +36,10 @@ function ResumeResultContent() {
   const linkedRecord = recordId ? getResumeRecord(recordId) : undefined;
   const optimization = linkedRecord?.optimization ?? resumeOptimization;
   const pageDraft = linkedRecord?.draft ?? resumeDraft;
-  const progressLevel = optimization ? 2 : linkedRecord?.diagnosis ? 1 : 0;
+  const timelineLevel = getResumeRecordTimelineLevel(linkedRecord);
+  const canViewUpload = timelineLevel >= 0;
+  const canViewDiagnosis = timelineLevel >= 1;
+  const canViewOptimization = timelineLevel >= 2;
   const [resumeExpanded, setResumeExpanded] = useState(false);
   const [jobExpanded, setJobExpanded] = useState(false);
 
@@ -92,32 +99,37 @@ function ResumeResultContent() {
   };
 
   const handleStepClick = (index: number) => {
-    if (readonly && recordId) {
-      if (index === 0) {
-        router.replace(`/resume/upload?recordId=${recordId}&readonly=1`);
-        return;
-      }
-
-      if (index === 1 && progressLevel >= 1) {
-        router.replace(`/resume/diagnosis-result?recordId=${recordId}&readonly=1`);
-        return;
-      }
-
-      if (index === 2) {
-        router.replace(`/resume/result?recordId=${recordId}&readonly=1`);
-      }
+    if (!recordId || !linkedRecord) {
       return;
     }
 
-    if (!readonly) {
-      if (index === 0) {
-        router.push("/profile/records/resume");
-        return;
-      }
+    const target = getResumeRecordStepTarget(linkedRecord, index);
+    if (!target) {
+      return;
+    }
 
-      if (index === 1) {
-        router.push("/profile/records/resume");
-      }
+    if (target === "upload") {
+      router.replace(`/resume/upload?recordId=${recordId}&readonly=1`);
+      return;
+    }
+
+    if (target === "diagnosis-loading") {
+      router.replace(`/resume/diagnosis-loading?recordId=${recordId}&readonly=1`);
+      return;
+    }
+
+    if (target === "diagnosis-result") {
+      router.replace(`/resume/diagnosis-result?recordId=${recordId}&readonly=1`);
+      return;
+    }
+
+    if (target === "optimization-loading") {
+      router.replace(`/resume/loading?recordId=${recordId}&readonly=1`);
+      return;
+    }
+
+    if (target === "optimization-result") {
+      router.replace(`/resume/result?recordId=${recordId}&readonly=1`);
     }
   };
 
@@ -493,29 +505,20 @@ function ResumeResultContent() {
   return (
     <div>
       <section className="section">
-        <div style={{ display: "grid", gridTemplateColumns: "32px 1fr 32px", alignItems: "center", gap: 8 }}>
-          {readonly && recordId ? (
-            <Link
-              href="/profile/records/resume"
-              className="button-ghost"
-              style={{ textAlign: "center", padding: 0 }}
-            >
-              &lt;
-            </Link>
-          ) : (
-            <span />
-          )}
-          <h1 className="section-title" style={{ textAlign: "center", margin: 0 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", alignItems: "center" }}>
+          <h1 className="section-title" style={{ textAlign: "center", margin: 0, whiteSpace: "nowrap" }}>
             AI简历优化结果
           </h1>
-          <span />
         </div>
       </section>
       <StepStrip
         steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]}
         active={2}
         onStepClick={handleStepClick}
-        isStepClickable={(index) => readonly ? index <= progressLevel : index <= 2}
+        stepStates={getResumeRecordStepStates(linkedRecord, 2)}
+        isStepClickable={(index) =>
+          index === 0 ? canViewUpload : index === 1 ? canViewDiagnosis : canViewOptimization
+        }
       />
 
       {pageDraft ? (

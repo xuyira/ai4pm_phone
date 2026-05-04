@@ -1,10 +1,14 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FakeUploadCard, ResumeTypeSwitch } from "@/components/interactive";
-import { usePrototypeStore } from "@/components/prototype-store";
+import {
+  getResumeRecordStepStates,
+  getResumeRecordStepTarget,
+  getResumeRecordTimelineLevel,
+  usePrototypeStore
+} from "@/components/prototype-store";
 import { useToast } from "@/components/toast";
 import { StepStrip } from "@/components/ui";
 
@@ -25,10 +29,11 @@ function ResumeUploadContent() {
   const linkedRecord = recordId ? getResumeRecord(recordId) : undefined;
   const activeRecordId = recordId ?? currentResumeRecordId;
   const pageDraft = linkedRecord?.draft ?? resumeDraft;
-  const hasDiagnosis = Boolean(linkedRecord?.diagnosis);
-  const hasOptimization = Boolean(linkedRecord?.optimization);
-  const isReadonlyReview = readonly || hasDiagnosis || hasOptimization;
-  const progressLevel = hasOptimization ? 2 : hasDiagnosis ? 1 : 0;
+  const timelineLevel = getResumeRecordTimelineLevel(linkedRecord);
+  const isReadonlyReview = readonly || Boolean(linkedRecord);
+  const canViewUpload = timelineLevel >= 0;
+  const canViewDiagnosis = timelineLevel >= 1;
+  const canViewOptimization = timelineLevel >= 2;
 
   useEffect(() => {
     if (readonly && recordId && !linkedRecord) {
@@ -66,24 +71,37 @@ function ResumeUploadContent() {
   };
 
   const handleStepClick = (index: number) => {
-    if (activeRecordId && (hasDiagnosis || hasOptimization)) {
-      if (index === 0) {
-        router.replace(`/resume/upload?recordId=${activeRecordId}&readonly=1`);
-        return;
-      }
+    if (!activeRecordId || !linkedRecord) {
+      return;
+    }
 
-      if (index === 1 && progressLevel >= 1) {
-        router.replace(
-          hasOptimization
-            ? `/resume/diagnosis-result?recordId=${activeRecordId}&readonly=1`
-            : `/resume/diagnosis-result?recordId=${activeRecordId}`
-        );
-        return;
-      }
+    const target = getResumeRecordStepTarget(linkedRecord, index);
+    if (!target) {
+      return;
+    }
 
-      if (index === 2 && progressLevel >= 2) {
-        router.replace(`/resume/result?recordId=${activeRecordId}&readonly=1`);
-      }
+    if (target === "upload") {
+      router.replace(`/resume/upload?recordId=${activeRecordId}&readonly=1`);
+      return;
+    }
+
+    if (target === "diagnosis-loading") {
+      router.replace(`/resume/diagnosis-loading?recordId=${activeRecordId}&readonly=1`);
+      return;
+    }
+
+    if (target === "diagnosis-result") {
+      router.replace(`/resume/diagnosis-result?recordId=${activeRecordId}&readonly=1`);
+      return;
+    }
+
+    if (target === "optimization-loading") {
+      router.replace(`/resume/loading?recordId=${activeRecordId}&readonly=1`);
+      return;
+    }
+
+    if (target === "optimization-result") {
+      router.replace(`/resume/result?recordId=${activeRecordId}&readonly=1`);
     }
   };
 
@@ -94,29 +112,20 @@ function ResumeUploadContent() {
   return (
     <div>
       <section className="section">
-        <div style={{ display: "grid", gridTemplateColumns: "32px 1fr 32px", alignItems: "center", gap: 8 }}>
-          {isReadonlyReview && activeRecordId ? (
-            <Link
-              href="/profile/records/resume"
-              className="button-ghost"
-              style={{ textAlign: "center", padding: 0 }}
-            >
-              &lt;
-            </Link>
-          ) : (
-            <span />
-          )}
-          <h1 className="section-title" style={{ textAlign: "center", margin: 0 }}>
-            AI简历优化
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", alignItems: "center" }}>
+          <h1 className="section-title" style={{ textAlign: "center", margin: 0, whiteSpace: "nowrap" }}>
+            上传简历与JD
           </h1>
-          <span />
         </div>
       </section>
       <StepStrip
         steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]}
         active={0}
         onStepClick={handleStepClick}
-        isStepClickable={(index) => isReadonlyReview ? index <= progressLevel : index === 0}
+        stepStates={getResumeRecordStepStates(linkedRecord, 0)}
+        isStepClickable={(index) =>
+          index === 0 ? canViewUpload : index === 1 ? canViewDiagnosis : canViewOptimization
+        }
       />
 
       <section className="section form-stack">
