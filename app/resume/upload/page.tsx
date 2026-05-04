@@ -54,7 +54,7 @@ export default function ResumeUploadPage() {
               <label className="field-label">岗位标题</label>
               <input
                 className="input"
-                placeholder="如：高级产品经理"
+                placeholder="如：AI产品经理"
                 value={resumeDraft.jobTitle}
                 onChange={(event) => updateResumeDraft({ jobTitle: event.target.value })}
               />

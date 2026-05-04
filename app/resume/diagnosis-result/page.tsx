@@ -11,12 +11,12 @@ import { StepStrip } from "@/components/ui";
 const dimensionMeta = [
   { key: "structureClarity", label: "结构清晰度" },
   { key: "languageProfessionalism", label: "语言专业度" },
-  { key: "priorityFocus", label: "重点突出度" },
-  { key: "productExpression", label: "产品逻辑度" },
   { key: "resultQuantification", label: "指标量化度" },
+  { key: "productExpression", label: "产品思维度" },
   { key: "hardRequirementFit", label: "要求达成度" },
   { key: "responsibilityCoverage", label: "职责覆盖度" },
-  { key: "industryRelevance", label: "行业相关度" }
+  { key: "industryRelevance", label: "行业相关度" },
+  { key: "priorityFocus", label: "重点突出度" }
 ] as const;
 const dimensionLabelMap = Object.fromEntries(dimensionMeta.map((item) => [item.key, item.label])) as Record<string, string>;
 
