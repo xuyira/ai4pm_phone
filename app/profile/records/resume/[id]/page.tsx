@@ -38,7 +38,7 @@ export default function ResumeRecordDetailPage() {
     router.replace(
       record.status === "optimized"
         ? `/resume/result?recordId=${record.id}&readonly=1`
-        : `/resume/diagnosis-result?recordId=${record.id}`
+        : `/resume/diagnosis-result?recordId=${record.id}&readonly=1`
     );
   }, [isHydrated, record, restoreResumeRecord, router]);
 

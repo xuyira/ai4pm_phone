@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ExpandableInfoBox } from "@/components/interactive";
@@ -40,9 +40,12 @@ function ResumeDiagnosisResultContent() {
   const readonly = searchParams.get("readonly") === "1";
   const recordId = searchParams.get("recordId");
   const {
+    currentResumeRecordId,
     getResumeRecord,
     resumeDraft,
     resumeDiagnosis,
+    resumeOptimization,
+    createResumeRewriteRecord,
     resumeDiagnosisActions,
     setResumeDiagnosisActions,
     setResumeDiagnosisActionsForRecord,
@@ -56,11 +59,21 @@ function ResumeDiagnosisResultContent() {
   const [detailSectionExpanded, setDetailSectionExpanded] = useState(false);
   const [quickExpanded, setQuickExpanded] = useState<Record<string, boolean>>({});
   const linkedRecord = recordId ? getResumeRecord(recordId) : undefined;
+  const activeRecordId = recordId ?? currentResumeRecordId;
   const diagnosis = linkedRecord?.diagnosis ?? resumeDiagnosis;
   const pageDraft = linkedRecord?.draft ?? resumeDraft;
   const savedDiagnosisActions = linkedRecord?.diagnosisActions ?? resumeDiagnosisActions;
   const savedQuickAnswers = linkedRecord?.quickSupplementAnswers ?? resumeQuickSupplementAnswers;
   const visibleQuickQuestions = diagnosis?.quickSupplementQuestions ?? [];
+  const hasOptimization = Boolean(linkedRecord?.optimization);
+  const isReadonlyReview = readonly || hasOptimization;
+  const progressLevel = hasOptimization ? 2 : diagnosis ? 1 : 0;
+
+  useEffect(() => {
+    if (!recordId && !readonly && resumeOptimization) {
+      router.replace("/resume/result");
+    }
+  }, [recordId, readonly, resumeOptimization, router]);
 
   const totalScore = useMemo(() => {
     if (!diagnosis) {
@@ -114,6 +127,11 @@ function ResumeDiagnosisResultContent() {
       });
     }
 
+    if (activeRecordId) {
+      setResumeDiagnosisActionsForRecord(activeRecordId, nextActions);
+      return;
+    }
+
     if (recordId) {
       setResumeDiagnosisActionsForRecord(recordId, nextActions);
       return;
@@ -131,18 +149,62 @@ function ResumeDiagnosisResultContent() {
     router.push("/resume/loading");
   };
 
+  const handleRewriteOptimization = () => {
+    if (!activeRecordId) {
+      return;
+    }
+
+    const nextId = createResumeRewriteRecord(activeRecordId, "diagnosis");
+    if (!nextId) {
+      return;
+    }
+
+    router.replace("/resume/diagnosis-result");
+  };
+
+  const handleStepClick = (index: number) => {
+    if (activeRecordId && diagnosis) {
+      if (index === 0) {
+        router.replace(`/resume/upload?recordId=${activeRecordId}&readonly=1`);
+        return;
+      }
+
+      if (index === 1 && progressLevel >= 1) {
+        router.replace(
+          hasOptimization
+            ? `/resume/diagnosis-result?recordId=${activeRecordId}&readonly=1`
+            : `/resume/diagnosis-result?recordId=${activeRecordId}`
+        );
+        return;
+      }
+
+      if (index === 2 && progressLevel >= 2) {
+        router.replace(`/resume/result?recordId=${activeRecordId}&readonly=1`);
+      }
+      return;
+    }
+
+    if (index === 0) {
+      router.push("/resume/upload");
+    }
+  };
+
   if (!diagnosis) {
     router.replace("/resume/upload");
     return null;
   }
 
-  const canViewOptimization = readonly && linkedRecord?.optimization;
+  if (!recordId && !readonly && resumeOptimization) {
+    return null;
+  }
+
+  const canViewOptimization = hasOptimization;
 
   return (
     <div>
       <section className="section">
         <div style={{ display: "grid", gridTemplateColumns: "32px 1fr 32px", alignItems: "center", gap: 8 }}>
-          {readonly && recordId ? (
+          {isReadonlyReview && activeRecordId ? (
             <Link
               href="/profile/records/resume"
               className="button-ghost"
@@ -158,7 +220,7 @@ function ResumeDiagnosisResultContent() {
           </h1>
           {canViewOptimization ? (
             <Link
-              href={`/resume/result?recordId=${recordId}&readonly=1`}
+              href={`/resume/result?recordId=${activeRecordId}&readonly=1`}
               className="button-ghost"
               style={{ textAlign: "center", padding: 0 }}
             >
@@ -169,7 +231,12 @@ function ResumeDiagnosisResultContent() {
           )}
         </div>
       </section>
-      <StepStrip steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]} active={1} />
+      <StepStrip
+        steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]}
+        active={1}
+        onStepClick={handleStepClick}
+        isStepClickable={(index) => index <= progressLevel}
+      />
 
       <section className="section form-stack">
         <ExpandableInfoBox
@@ -223,7 +290,7 @@ function ResumeDiagnosisResultContent() {
                     <div className="form-stack" style={{ marginTop: 12 }}>
                       <div className="record-subtitle">评分理由：{detail.reason}</div>
                       <div className="record-subtitle">优化建议：{detail.improvement}</div>
-                      {readonly ? (
+                      {isReadonlyReview ? (
                         <div
                           className="record-subtitle"
                           style={{ whiteSpace: "pre-wrap", marginTop: 4 }}
@@ -282,7 +349,7 @@ function ResumeDiagnosisResultContent() {
                         <div className="record-subtitle">补充原因：{question.whyAsk}</div>
                         <div>
                           <label className="field-label">你的补充</label>
-                          {readonly ? (
+                          {isReadonlyReview ? (
                             <div className="record-subtitle" style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>
                               {savedAnswer || "未填写"}
                             </div>
@@ -298,8 +365,8 @@ function ResumeDiagnosisResultContent() {
                                   [question.id]: event.target.value
                                 };
 
-                                if (recordId) {
-                                  setResumeQuickSupplementAnswersForRecord(recordId, nextAnswers);
+                                if (activeRecordId) {
+                                  setResumeQuickSupplementAnswersForRecord(activeRecordId, nextAnswers);
                                   return;
                                 }
 
@@ -329,7 +396,7 @@ function ResumeDiagnosisResultContent() {
                   <div className="record-subtitle">可补充任何你希望 AI 在后续优化时重点参考的信息。</div>
                   <div>
                     <label className="field-label">你的补充</label>
-                    {readonly ? (
+                    {isReadonlyReview ? (
                       <div className="record-subtitle" style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>
                         {savedQuickAnswers.__custom?.trim() || "未填写"}
                       </div>
@@ -345,8 +412,8 @@ function ResumeDiagnosisResultContent() {
                             __custom: event.target.value
                           };
 
-                          if (recordId) {
-                            setResumeQuickSupplementAnswersForRecord(recordId, nextAnswers);
+                          if (activeRecordId) {
+                            setResumeQuickSupplementAnswersForRecord(activeRecordId, nextAnswers);
                             return;
                           }
 
@@ -362,13 +429,19 @@ function ResumeDiagnosisResultContent() {
         </div>
       </section>
 
-      {!readonly ? (
+      {!isReadonlyReview ? (
         <section className="section">
           <button type="button" className="button" onClick={handleStartOptimization}>
             开始AI简历优化
           </button>
         </section>
-      ) : null}
+      ) : (
+        <section className="section form-stack">
+          <button type="button" className="button" onClick={handleRewriteOptimization}>
+            修改回答重新优化
+          </button>
+        </section>
+      )}
     </div>
   );
 }

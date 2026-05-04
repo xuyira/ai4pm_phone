@@ -61,7 +61,7 @@ export default function HomePage() {
 
           <p className="info-item-copy">
             <span className="info-item-title">2. AI简历优化：</span>
-            上传简历与目标岗位JD，AI会从8个维度进行全面简历诊断，并引导你挖掘出与岗位契合的经历信息，最终生成更符合目标产品岗位要求的优化版简历。
+            上传简历与目标岗位JD，AI会从8个维度进行全面简历诊断，并引导你补充与岗位契合的经历信息，最终生成更符合目标产品岗位要求的优化版简历。
           </p>
 
           <p className="info-item-copy">

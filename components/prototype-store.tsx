@@ -367,6 +367,8 @@ type PrototypeStoreValue = {
   getResumeRecord: (id: string) => ResumeFlowRecord | undefined;
   getRecordsByType: (type: FeatureType) => RecordItem[];
   restoreResumeRecord: (id: string) => boolean;
+  createResumeRewriteRecord: (sourceRecordId: string, mode: "upload" | "diagnosis") => string | null;
+  createResumeIterationRecord: (sourceRecordId: string) => string | null;
   ensureResumeRecord: (status: ResumeRecordStatus) => string | null;
   updateResumeRecordStatus: (
     status: ResumeRecordStatus,
@@ -426,6 +428,10 @@ function formatTimestamp(date = new Date()) {
 
 function cloneDraft(draft: ResumeDraft): ResumeDraft {
   return JSON.parse(JSON.stringify(draft)) as ResumeDraft;
+}
+
+function cloneJsonValue<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
 }
 
 function shouldKeepDraftBoundRecord(status?: ResumeRecordStatus) {
@@ -529,6 +535,7 @@ export function PrototypeStoreProvider({
     useState<ResumeOptimizationStatus>("idle");
   const [resumeOptimizationError, setResumeOptimizationError] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [hasLoadedSharedResumeRecords, setHasLoadedSharedResumeRecords] = useState(false);
 
   useEffect(() => {
     const saved = window.localStorage.getItem(HIDDEN_KEY);
@@ -543,6 +550,41 @@ export function PrototypeStoreProvider({
     }
 
     setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetch("/api/resume-records", {
+      cache: "no-store"
+    })
+      .then(async (response) => {
+        const payload = (await response.json()) as {
+          records?: ResumeFlowRecord[];
+        };
+
+        if (!response.ok) {
+          throw new Error("加载共享记录失败");
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        setResumeRecords(normalizeResumeRecords(payload.records || []));
+      })
+      .catch(() => {
+        // Keep local fallback records when shared storage is unavailable.
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setHasLoadedSharedResumeRecords(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const deleteRecord = useCallback((id: string) => {
@@ -979,6 +1021,24 @@ export function PrototypeStoreProvider({
     window.localStorage.setItem(RESUME_RECORDS_KEY, JSON.stringify(resumeRecords));
   }, [isHydrated, resumeRecords]);
 
+  useEffect(() => {
+    if (!isHydrated || !hasLoadedSharedResumeRecords) {
+      return;
+    }
+
+    void fetch("/api/resume-records", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        records: resumeRecords
+      })
+    }).catch(() => {
+      // Local storage remains as a fallback if shared sync fails.
+    });
+  }, [hasLoadedSharedResumeRecords, isHydrated, resumeRecords]);
+
   const visibleRecords = useMemo(
     () => staticRecords.filter((item) => !hiddenIds.includes(item.id)),
     [hiddenIds]
@@ -1023,6 +1083,112 @@ export function PrototypeStoreProvider({
     return true;
   }, [resumeRecords]);
 
+  const createResumeRewriteRecord = useCallback(
+    (sourceRecordId: string, mode: "upload" | "diagnosis") => {
+      const source = resumeRecords.find((item) => item.id === sourceRecordId);
+      if (!source) {
+        return null;
+      }
+
+      const now = Date.now();
+      const nextId = `resume-${now}`;
+      const nextDraft = cloneDraft(source.draft);
+      const nextDiagnosis =
+        mode === "diagnosis" && source.diagnosis ? cloneJsonValue(source.diagnosis) : null;
+      const nextDiagnosisActions =
+        mode === "diagnosis" ? cloneJsonValue(source.diagnosisActions || []) : [];
+      const nextQuickAnswers =
+        mode === "diagnosis" ? cloneJsonValue(source.quickSupplementAnswers || {}) : {};
+      const nextRecord: ResumeFlowRecord = {
+        id: nextId,
+        type: "resume",
+        jobTitle: source.jobTitle,
+        title: source.title || "历史记录",
+        timestamp: formatTimestamp(new Date(now)),
+        updatedAt: now,
+        status: mode === "diagnosis" ? "diagnosed" : "uploaded",
+        draft: nextDraft,
+        diagnosis: nextDiagnosis,
+        diagnosisActions: nextDiagnosisActions,
+        quickSupplementAnswers: nextQuickAnswers,
+        optimization: null,
+        lastError: null
+      };
+
+      upsertResumeRecord(nextRecord);
+      setCurrentResumeRecordId(nextId);
+      setResumeDraft(nextDraft);
+      setResumeDiagnosisState(nextDiagnosis);
+      setResumeDiagnosisActionsState(nextDiagnosisActions);
+      setResumeQuickSupplementAnswersState(nextQuickAnswers);
+      setResumeDiagnosisStatusState(mode === "diagnosis" && nextDiagnosis ? "completed" : "idle");
+      setResumeDiagnosisError(null);
+      setResumeOptimizationState(null);
+      setResumeOptimizationStatusState("idle");
+      setResumeOptimizationError(null);
+      return nextId;
+    },
+    [resumeRecords, upsertResumeRecord]
+  );
+
+  const createResumeIterationRecord = useCallback(
+    (sourceRecordId: string) => {
+      const source = resumeRecords.find((item) => item.id === sourceRecordId);
+      if (!source?.optimization) {
+        return null;
+      }
+
+      const now = Date.now();
+      const nextId = `resume-${now}`;
+      const baseDraft = cloneDraft(source.draft);
+      const baseFileName =
+        source.draft.extractedResume?.filename?.replace(/\.(pdf|docx|txt)$/i, "") || "优化后简历";
+      const nextDraft: ResumeDraft = {
+        ...baseDraft,
+        extractedResume: {
+          filename: `${baseFileName}-优化后简历.txt`,
+          fileType: "docx",
+          parser: "optimized_resume_reuse",
+          format: "text",
+          charCount: source.optimization.optimizedResumeText.length,
+          lineCount: source.optimization.optimizedResumeText.split("\n").length,
+          qualityFlag: "good",
+          warnings: [],
+          content: source.optimization.optimizedResumeText
+        }
+      };
+      const nextRecord: ResumeFlowRecord = {
+        id: nextId,
+        type: "resume",
+        jobTitle: source.jobTitle,
+        title: source.title || "历史记录",
+        timestamp: formatTimestamp(new Date(now)),
+        updatedAt: now,
+        status: "uploaded",
+        draft: nextDraft,
+        diagnosis: null,
+        diagnosisActions: [],
+        quickSupplementAnswers: {},
+        optimization: null,
+        lastError: null
+      };
+
+      upsertResumeRecord(nextRecord);
+      setCurrentResumeRecordId(nextId);
+      setResumeDraft(nextDraft);
+      setResumeDiagnosisState(null);
+      setResumeDiagnosisActionsState([]);
+      setResumeQuickSupplementAnswersState({});
+      setResumeDiagnosisStatusState("idle");
+      setResumeDiagnosisError(null);
+      setResumeOptimizationState(null);
+      setResumeOptimizationStatusState("idle");
+      setResumeOptimizationError(null);
+      return nextId;
+    },
+    [resumeRecords, upsertResumeRecord]
+  );
+
   const value = useMemo<PrototypeStoreValue>(
     () => ({
       isHydrated,
@@ -1044,11 +1210,14 @@ export function PrototypeStoreProvider({
       getRecordsByType: (type) =>
         type === "resume"
           ? resumeRecords
+              .filter((item) => item.status !== "uploaded")
               .slice()
               .sort((a, b) => b.updatedAt - a.updatedAt)
               .map(buildResumeRecordItem)
           : visibleRecords.filter((item) => item.type === type),
       restoreResumeRecord,
+      createResumeRewriteRecord,
+      createResumeIterationRecord,
       ensureResumeRecord,
       updateResumeRecordStatus,
       updateResumeDraft,
@@ -1070,6 +1239,8 @@ export function PrototypeStoreProvider({
       clearResumeDiagnosis,
       clearResumeOptimization,
       clearResumeDraft,
+      createResumeRewriteRecord,
+      createResumeIterationRecord,
       deleteRecord,
       ensureResumeRecord,
       restoreResumeRecord,

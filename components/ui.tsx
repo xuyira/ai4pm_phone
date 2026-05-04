@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 export function PageIntro({
@@ -22,21 +24,33 @@ export function PageIntro({
 
 export function StepStrip({
   steps,
-  active
+  active,
+  onStepClick,
+  isStepClickable
 }: {
   steps: string[];
   active: number;
+  onStepClick?: (index: number) => void;
+  isStepClickable?: (index: number) => boolean;
 }) {
   return (
     <div className="step-strip">
       {steps.map((label, index) => (
-        <div
+        <button
+          type="button"
           key={label}
-          className={`step${index === active ? " is-active" : ""}`}
+          className={`step${index === active ? " is-active" : ""}${isStepClickable?.(index) ? " is-clickable" : ""}`}
+          onClick={() => {
+            if (isStepClickable?.(index) && onStepClick) {
+              onStepClick(index);
+            }
+          }}
+          disabled={!isStepClickable?.(index)}
         >
-          <span className="step-index">{index + 1}</span>
-          <span>{label}</span>
-        </div>
+          <span className="step-label">
+            {index + 1} {label}
+          </span>
+        </button>
       ))}
     </div>
   );

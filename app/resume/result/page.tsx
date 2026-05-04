@@ -26,12 +26,13 @@ function ResumeResultContent() {
   const searchParams = useSearchParams();
   const readonly = searchParams.get("readonly") === "1";
   const recordId = searchParams.get("recordId");
-  const { getResumeRecord, resumeDraft, resumeOptimization } = usePrototypeStore();
+  const { getResumeRecord, resumeDraft, resumeOptimization, createResumeIterationRecord } = usePrototypeStore();
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const pdfFrameRef = useRef<HTMLIFrameElement | null>(null);
   const linkedRecord = recordId ? getResumeRecord(recordId) : undefined;
   const optimization = linkedRecord?.optimization ?? resumeOptimization;
   const pageDraft = linkedRecord?.draft ?? resumeDraft;
+  const progressLevel = optimization ? 2 : linkedRecord?.diagnosis ? 1 : 0;
   const [resumeExpanded, setResumeExpanded] = useState(false);
   const [jobExpanded, setJobExpanded] = useState(false);
 
@@ -73,6 +74,52 @@ function ResumeResultContent() {
   if (!optimization) {
     return null;
   }
+
+  const handleIterateOptimization = () => {
+    const sourceRecordId = recordId ?? linkedRecord?.id;
+    if (!sourceRecordId) {
+      push("当前记录尚未保存，暂时无法基于优化后简历再次优化。");
+      return;
+    }
+
+    const nextId = createResumeIterationRecord(sourceRecordId);
+    if (!nextId) {
+      push("未找到可复用的优化结果。");
+      return;
+    }
+
+    router.push("/resume/upload");
+  };
+
+  const handleStepClick = (index: number) => {
+    if (readonly && recordId) {
+      if (index === 0) {
+        router.replace(`/resume/upload?recordId=${recordId}&readonly=1`);
+        return;
+      }
+
+      if (index === 1 && progressLevel >= 1) {
+        router.replace(`/resume/diagnosis-result?recordId=${recordId}&readonly=1`);
+        return;
+      }
+
+      if (index === 2) {
+        router.replace(`/resume/result?recordId=${recordId}&readonly=1`);
+      }
+      return;
+    }
+
+    if (!readonly) {
+      if (index === 0) {
+        router.push("/profile/records/resume");
+        return;
+      }
+
+      if (index === 1) {
+        router.push("/profile/records/resume");
+      }
+    }
+  };
 
   const profile = optimization.optimizedResumeProfile;
   const intentItems = [
@@ -447,20 +494,29 @@ function ResumeResultContent() {
     <div>
       <section className="section">
         <div style={{ display: "grid", gridTemplateColumns: "32px 1fr 32px", alignItems: "center", gap: 8 }}>
-          <Link
-            href={readonly && recordId ? `/resume/diagnosis-result?recordId=${recordId}&readonly=1` : "/resume/diagnosis-result"}
-            className="button-ghost"
-            style={{ textAlign: "center", padding: 0 }}
-          >
-            &lt;
-          </Link>
+          {readonly && recordId ? (
+            <Link
+              href="/profile/records/resume"
+              className="button-ghost"
+              style={{ textAlign: "center", padding: 0 }}
+            >
+              &lt;
+            </Link>
+          ) : (
+            <span />
+          )}
           <h1 className="section-title" style={{ textAlign: "center", margin: 0 }}>
             AI简历优化结果
           </h1>
           <span />
         </div>
       </section>
-      <StepStrip steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]} active={2} />
+      <StepStrip
+        steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]}
+        active={2}
+        onStepClick={handleStepClick}
+        isStepClickable={(index) => readonly ? index <= progressLevel : index <= 2}
+      />
 
       {pageDraft ? (
         <section className="section form-stack">
@@ -605,13 +661,11 @@ function ResumeResultContent() {
         </div>
       </section>
 
-      {readonly && recordId ? (
-        <section className="section" style={{ display: "flex", justifyContent: "center" }}>
-          <Link href="/profile/records/resume" className="button-secondary">
-            返回我的记录
-          </Link>
-        </section>
-      ) : null}
+      <section className="section form-stack">
+        <button type="button" className="button" onClick={handleIterateOptimization}>
+          使用优化后简历再次优化
+        </button>
+      </section>
     </div>
   );
 }

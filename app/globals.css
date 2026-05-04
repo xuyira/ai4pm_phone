@@ -400,41 +400,53 @@ textarea {
 }
 
 .step-strip {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 18px;
-  overflow-x: auto;
-  padding-bottom: 4px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 16px 0 22px;
 }
 
 .step {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  white-space: nowrap;
-  color: var(--muted);
-  font-weight: 700;
-}
-
-.step-index {
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(232, 202, 145, 0.88);
-  background: rgba(255, 251, 243, 0.96);
+  min-width: 0;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 700;
+  border: 0;
+  background: rgba(255, 250, 242, 0.9);
+  border: 1px solid rgba(221, 209, 190, 0.9);
+  border-radius: 16px;
+  padding: 12px 10px;
+  min-height: 56px;
+  opacity: 0.92;
+  box-shadow: 0 8px 18px rgba(113, 96, 73, 0.06);
+}
+
+.step-label {
+  font-size: 12px;
+  line-height: 1.35;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.step:disabled {
+  cursor: default;
+}
+
+.step.is-clickable {
+  cursor: pointer;
+  opacity: 1;
 }
 
 .step.is-active {
-  color: var(--brand-deep);
+  background: linear-gradient(135deg, rgba(255, 234, 183, 0.95) 0%, rgba(243, 218, 164, 0.92) 100%);
+  border-color: rgba(227, 168, 57, 0.56);
+  box-shadow: 0 12px 24px rgba(184, 145, 86, 0.16);
 }
-
-.step.is-active .step-index {
-  border-color: rgba(227, 168, 57, 0.64);
-  background: rgba(255, 234, 183, 0.95);
+.step.is-active .step-label {
+  color: var(--brand-deep);
 }
 
 .status-card {
