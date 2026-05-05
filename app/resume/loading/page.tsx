@@ -43,6 +43,7 @@ function ResumeLoadingContent() {
   const record = activeRecordId ? getResumeRecord(activeRecordId) : undefined;
   const pageDraft = record?.draft ?? resumeDraft;
   const timelineLevel = getResumeRecordTimelineLevel(record);
+  const canUseStepNavigation = Boolean(recordId && record);
   const canViewUpload = timelineLevel >= 0;
   const canViewDiagnosis = timelineLevel >= 1;
   const canViewOptimization = timelineLevel >= 2;
@@ -183,7 +184,7 @@ function ResumeLoadingContent() {
         steps={["上传简历与JD", "AI简历诊断", "AI简历优化"]}
         active={2}
         onStepClick={(index) => {
-          if (!activeRecordId) {
+          if (!canUseStepNavigation || !activeRecordId) {
             return;
           }
 
@@ -214,7 +215,8 @@ function ResumeLoadingContent() {
         }}
         stepStates={getResumeRecordStepStates(record, 2)}
         isStepClickable={(index) =>
-          index === 0 ? canViewUpload : index === 1 ? canViewDiagnosis : canViewOptimization
+          canUseStepNavigation &&
+          (index === 0 ? canViewUpload : index === 1 ? canViewDiagnosis : canViewOptimization)
         }
       />
 

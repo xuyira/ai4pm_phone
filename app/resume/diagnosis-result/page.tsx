@@ -71,6 +71,7 @@ function ResumeDiagnosisResultContent() {
   const savedQuickAnswers = linkedRecord?.quickSupplementAnswers ?? resumeQuickSupplementAnswers;
   const visibleQuickQuestions = diagnosis?.quickSupplementQuestions ?? [];
   const timelineLevel = getResumeRecordTimelineLevel(linkedRecord);
+  const canUseStepNavigation = Boolean(recordId && linkedRecord);
   const isReadonlyReview = readonly || (Boolean(linkedRecord) && !isEditMode);
   const isDiagnosedRecord = linkedRecord?.status === "diagnosed";
   const canViewUpload = timelineLevel >= 0;
@@ -204,7 +205,7 @@ function ResumeDiagnosisResultContent() {
   };
 
   const handleStepClick = (index: number) => {
-    if (!activeRecordId || !linkedRecord) {
+    if (!canUseStepNavigation || !activeRecordId || !linkedRecord) {
       return;
     }
 
@@ -268,7 +269,8 @@ function ResumeDiagnosisResultContent() {
         onStepClick={handleStepClick}
         stepStates={getResumeRecordStepStates(linkedRecord, 1)}
         isStepClickable={(index) =>
-          index === 0 ? canViewUpload : index === 1 ? canViewDiagnosis : canViewOptimization
+          canUseStepNavigation &&
+          (index === 0 ? canViewUpload : index === 1 ? canViewDiagnosis : canViewOptimization)
         }
       />
 

@@ -33,6 +33,7 @@ function ResumeUploadContent() {
   const activeRecordId = recordId ?? currentResumeRecordId;
   const pageDraft = linkedRecord?.draft ?? resumeDraft;
   const timelineLevel = getResumeRecordTimelineLevel(linkedRecord);
+  const canUseStepNavigation = Boolean(recordId && linkedRecord);
   const isReadonlyReview = readonly || Boolean(linkedRecord);
   const canViewUpload = timelineLevel >= 0;
   const canViewDiagnosis = timelineLevel >= 1;
@@ -87,7 +88,7 @@ function ResumeUploadContent() {
   };
 
   const handleStepClick = (index: number) => {
-    if (!activeRecordId || !linkedRecord) {
+    if (!canUseStepNavigation || !activeRecordId || !linkedRecord) {
       return;
     }
 
@@ -146,7 +147,8 @@ function ResumeUploadContent() {
         onStepClick={handleStepClick}
         stepStates={getResumeRecordStepStates(linkedRecord, 0)}
         isStepClickable={(index) =>
-          index === 0 ? canViewUpload : index === 1 ? canViewDiagnosis : canViewOptimization
+          canUseStepNavigation &&
+          (index === 0 ? canViewUpload : index === 1 ? canViewDiagnosis : canViewOptimization)
         }
       />
 
