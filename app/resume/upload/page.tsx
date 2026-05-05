@@ -33,7 +33,7 @@ function ResumeUploadContent() {
   const activeRecordId = recordId ?? currentResumeRecordId;
   const pageDraft = linkedRecord?.draft ?? resumeDraft;
   const timelineLevel = getResumeRecordTimelineLevel(linkedRecord);
-  const isReadonlyReview = readonly || (Boolean(linkedRecord) && !isEditMode);
+  const isReadonlyReview = readonly || Boolean(linkedRecord);
   const canViewUpload = timelineLevel >= 0;
   const canViewDiagnosis = timelineLevel >= 1;
   const canViewOptimization = timelineLevel >= 2;
@@ -96,30 +96,34 @@ function ResumeUploadContent() {
       return;
     }
 
-    const modeQuery = readonly ? "&readonly=1" : isEditMode ? "&edit=1" : "&readonly=1";
-
     if (target === "upload") {
-      router.replace(`/resume/upload?recordId=${activeRecordId}${modeQuery}`);
+      router.replace(
+        `/resume/upload?recordId=${activeRecordId}&readonly=1${isEditMode ? "&edit=1" : ""}`
+      );
       return;
     }
 
     if (target === "diagnosis-loading") {
-      router.replace(`/resume/diagnosis-loading?recordId=${activeRecordId}${modeQuery}`);
+      router.replace(`/resume/diagnosis-loading?recordId=${activeRecordId}&readonly=1`);
       return;
     }
 
     if (target === "diagnosis-result") {
-      router.replace(`/resume/diagnosis-result?recordId=${activeRecordId}${modeQuery}`);
+      router.replace(
+        isEditMode
+          ? `/resume/diagnosis-result?recordId=${activeRecordId}&edit=1`
+          : `/resume/diagnosis-result?recordId=${activeRecordId}&readonly=1`
+      );
       return;
     }
 
     if (target === "optimization-loading") {
-      router.replace(`/resume/loading?recordId=${activeRecordId}${modeQuery}`);
+      router.replace(`/resume/loading?recordId=${activeRecordId}&readonly=1`);
       return;
     }
 
     if (target === "optimization-result") {
-      router.replace(`/resume/result?recordId=${activeRecordId}${modeQuery}`);
+      router.replace(`/resume/result?recordId=${activeRecordId}&readonly=1`);
     }
   };
 

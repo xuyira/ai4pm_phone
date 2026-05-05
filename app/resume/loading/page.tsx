@@ -20,7 +20,6 @@ function ResumeLoadingContent() {
   const searchParams = useSearchParams();
   const { push } = useToast();
   const readonly = searchParams.get("readonly") === "1";
-  const isEditMode = searchParams.get("edit") === "1";
   const recordId = searchParams.get("recordId");
   const [resumeExpanded, setResumeExpanded] = useState(false);
   const [jobExpanded, setJobExpanded] = useState(false);
@@ -189,29 +188,28 @@ function ResumeLoadingContent() {
           }
 
           const target = getResumeRecordStepTarget(record, index);
-          const modeQuery = readonly ? "&readonly=1" : isEditMode ? "&edit=1" : "&readonly=1";
           if (target === "upload") {
-            router.replace(`/resume/upload?recordId=${activeRecordId}${modeQuery}`);
+            router.replace(`/resume/upload?recordId=${activeRecordId}&readonly=1`);
             return;
           }
 
           if (target === "diagnosis-loading") {
-            router.replace(`/resume/diagnosis-loading?recordId=${activeRecordId}${modeQuery}`);
+            router.replace(`/resume/diagnosis-loading?recordId=${activeRecordId}&readonly=1`);
             return;
           }
 
           if (target === "diagnosis-result") {
-            router.replace(`/resume/diagnosis-result?recordId=${activeRecordId}${modeQuery}`);
+            router.replace(`/resume/diagnosis-result?recordId=${activeRecordId}&readonly=1`);
             return;
           }
 
           if (target === "optimization-loading") {
-            router.replace(`/resume/loading?recordId=${activeRecordId}${modeQuery}`);
+            router.replace(`/resume/loading?recordId=${activeRecordId}&readonly=1`);
             return;
           }
 
           if (target === "optimization-result") {
-            router.replace(`/resume/result?recordId=${activeRecordId}${modeQuery}`);
+            router.replace(`/resume/result?recordId=${activeRecordId}&readonly=1`);
           }
         }}
         stepStates={getResumeRecordStepStates(record, 2)}
