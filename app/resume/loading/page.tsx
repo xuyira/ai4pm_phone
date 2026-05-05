@@ -245,11 +245,9 @@ function ResumeLoadingContent() {
             className="page-subtitle"
             style={{ marginTop: 0, wordBreak: "break-word", overflowWrap: "anywhere" }}
           >
-            <div>{readonly ? "当前设备为只读查看，不会重复触发新的优化任务。" : "预计需要1~2分钟，请勿关闭或刷新当前网页"}</div>
+            <div>预计需要1~2分钟，请勿关闭或刷新当前网页</div>
             <div style={{ marginTop: 10 }}>
-              {readonly
-                ? "请稍后回到记录列表刷新查看；原设备完成后，这里也能看到同一条结果。"
-                : "生成完成后，结果会自动保存到“我的记录”，后续可继续查看和操作"}
+              生成完成后，结果会自动保存到“我的记录”后续可继续查看和操作
             </div>
           </div>
         </div>

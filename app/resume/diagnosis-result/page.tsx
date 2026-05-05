@@ -185,8 +185,8 @@ function ResumeDiagnosisResultContent() {
         return;
       }
 
-      setResumeDiagnosisActions(draftDiagnosisActions);
-      setResumeQuickSupplementAnswers(draftQuickAnswers);
+      setResumeDiagnosisActionsForRecord(nextId, draftDiagnosisActions);
+      setResumeQuickSupplementAnswersForRecord(nextId, draftQuickAnswers);
       router.push("/resume/loading");
       return;
     }

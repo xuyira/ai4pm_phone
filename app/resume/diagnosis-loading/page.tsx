@@ -41,6 +41,8 @@ function ResumeDiagnosisLoadingContent() {
   const isActive = useRef(true);
   const activeRecordId = recordId ?? currentResumeRecordId;
   const record = activeRecordId ? getResumeRecord(activeRecordId) : undefined;
+  const shouldResumeEditableFlow =
+    Boolean(recordId) && Boolean(currentResumeRecordId) && recordId === currentResumeRecordId;
   const pageDraft = record?.draft ?? resumeDraft;
   const timelineLevel = getResumeRecordTimelineLevel(record);
   const canViewUpload = timelineLevel >= 0;
@@ -157,14 +159,18 @@ function ResumeDiagnosisLoadingContent() {
     }
 
     if (record.status === "diagnosed" || record.status === "optimized") {
-      router.replace(`/resume/diagnosis-result?recordId=${record.id}&readonly=1`);
+      router.replace(
+        shouldResumeEditableFlow
+          ? `/resume/diagnosis-result?recordId=${record.id}&edit=1`
+          : `/resume/diagnosis-result?recordId=${record.id}&readonly=1`
+      );
       return;
     }
 
     if (record.status === "optimize_failed") {
       router.replace(`/resume/result?recordId=${record.id}&readonly=1`);
     }
-  }, [readonly, record, router]);
+  }, [readonly, record, router, shouldResumeEditableFlow]);
 
   if (readonly && recordId && !record) {
     return null;
@@ -242,7 +248,7 @@ function ResumeDiagnosisLoadingContent() {
           <div className="page-subtitle" style={{ marginTop: 0 }}>
             <div>预计需要1~2分钟，请勿关闭或刷新当前网页</div>
             <div style={{ marginTop: 10 }}>
-              生成完成后，结果会自动保存到“我的记录”，后续可继续查看和操作
+              生成完成后，结果会自动保存到“我的记录”后续可继续查看和操作
             </div>
           </div>
         </div>
