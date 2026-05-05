@@ -124,7 +124,7 @@ function ResumeDiagnosisResultContent() {
           return priorityA - priorityB;
         }
 
-        return diagnosis.diagnosisScores[b.key].score - diagnosis.diagnosisScores[a.key].score;
+        return diagnosis.diagnosisScores[a.key].score - diagnosis.diagnosisScores[b.key].score;
       })
     : dimensionMeta;
 
@@ -357,6 +357,7 @@ function ResumeDiagnosisResultContent() {
             ? visibleQuickQuestions.map((question, index) => {
                 const isOpen = quickExpanded[question.id];
                 const savedAnswer = savedQuickAnswers[question.id] || "";
+                const editingAnswer = (isEditMode ? draftQuickAnswers : savedQuickAnswers)[question.id] || "";
                 return (
                   <div key={question.id} className="soft-card">
                     <button
@@ -386,7 +387,7 @@ function ResumeDiagnosisResultContent() {
                               className="textarea"
                               rows={4}
                               placeholder="请直接补充这条信息，便于后续优化时使用..."
-                              value={savedQuickAnswers[question.id] || ""}
+                              value={editingAnswer}
                               onChange={(event) => {
                                 const nextAnswers = {
                                   ...(isEditMode ? draftQuickAnswers : savedQuickAnswers),
@@ -438,7 +439,7 @@ function ResumeDiagnosisResultContent() {
                         className="textarea"
                         rows={4}
                         placeholder="例如：补充项目背景、真实数据、投递偏好或想强调的经历..."
-                        value={savedQuickAnswers.__custom || ""}
+                        value={(isEditMode ? draftQuickAnswers : savedQuickAnswers).__custom || ""}
                         onChange={(event) => {
                           const nextAnswers = {
                             ...(isEditMode ? draftQuickAnswers : savedQuickAnswers),

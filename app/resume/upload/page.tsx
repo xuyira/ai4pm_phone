@@ -52,6 +52,10 @@ function ResumeUploadContent() {
     router.replace("/resume/upload");
   }, [clearResumeDraft, isFreshEntry, readonly, recordId, router]);
 
+  if (isFreshEntry && !readonly && !recordId) {
+    return null;
+  }
+
   const handleStart = () => {
     if (!resumeDraft.extractedResume?.content.trim()) {
       push("请先上传简历，并等待文本提取完成。");

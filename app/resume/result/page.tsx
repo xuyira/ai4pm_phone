@@ -30,10 +30,11 @@ function ResumeResultContent() {
   const searchParams = useSearchParams();
   const readonly = searchParams.get("readonly") === "1";
   const recordId = searchParams.get("recordId");
-  const { getResumeRecord, resumeDraft, resumeOptimization, createResumeIterationRecord } = usePrototypeStore();
+  const { currentResumeRecordId, getResumeRecord, resumeDraft, resumeOptimization, createResumeIterationRecord } = usePrototypeStore();
   const [detailsExpanded, setDetailsExpanded] = useState(false);
   const pdfFrameRef = useRef<HTMLIFrameElement | null>(null);
-  const linkedRecord = recordId ? getResumeRecord(recordId) : undefined;
+  const activeRecordId = recordId ?? currentResumeRecordId;
+  const linkedRecord = activeRecordId ? getResumeRecord(activeRecordId) : undefined;
   const optimization = linkedRecord?.optimization ?? resumeOptimization;
   const pageDraft = linkedRecord?.draft ?? resumeDraft;
   const timelineLevel = getResumeRecordTimelineLevel(linkedRecord);
@@ -83,7 +84,7 @@ function ResumeResultContent() {
   }
 
   const handleIterateOptimization = () => {
-    const sourceRecordId = recordId ?? linkedRecord?.id;
+    const sourceRecordId = activeRecordId ?? linkedRecord?.id;
     if (!sourceRecordId) {
       push("当前记录尚未保存，暂时无法基于优化后简历再次优化。");
       return;
@@ -99,7 +100,7 @@ function ResumeResultContent() {
   };
 
   const handleStepClick = (index: number) => {
-    if (!recordId || !linkedRecord) {
+    if (!activeRecordId || !linkedRecord) {
       return;
     }
 
@@ -109,27 +110,27 @@ function ResumeResultContent() {
     }
 
     if (target === "upload") {
-      router.replace(`/resume/upload?recordId=${recordId}&readonly=1`);
+      router.replace(`/resume/upload?recordId=${activeRecordId}&readonly=1`);
       return;
     }
 
     if (target === "diagnosis-loading") {
-      router.replace(`/resume/diagnosis-loading?recordId=${recordId}&readonly=1`);
+      router.replace(`/resume/diagnosis-loading?recordId=${activeRecordId}&readonly=1`);
       return;
     }
 
     if (target === "diagnosis-result") {
-      router.replace(`/resume/diagnosis-result?recordId=${recordId}&readonly=1`);
+      router.replace(`/resume/diagnosis-result?recordId=${activeRecordId}&readonly=1`);
       return;
     }
 
     if (target === "optimization-loading") {
-      router.replace(`/resume/loading?recordId=${recordId}&readonly=1`);
+      router.replace(`/resume/loading?recordId=${activeRecordId}&readonly=1`);
       return;
     }
 
     if (target === "optimization-result") {
-      router.replace(`/resume/result?recordId=${recordId}&readonly=1`);
+      router.replace(`/resume/result?recordId=${activeRecordId}&readonly=1`);
     }
   };
 

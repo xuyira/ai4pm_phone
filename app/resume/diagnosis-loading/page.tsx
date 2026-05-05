@@ -64,7 +64,7 @@ function ResumeDiagnosisLoadingContent() {
       return;
     }
 
-    if (resumeDiagnosis) {
+    if (resumeDiagnosis && record?.status === "diagnosed") {
       if (isActive.current) {
         router.replace("/resume/diagnosis-result");
       }

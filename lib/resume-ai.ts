@@ -94,7 +94,7 @@ export function parseDiagnoseRequest(body: Partial<DiagnoseRequest>) {
 export async function runResumeDiagnosis(input: DiagnoseRequest) {
   const client = getOpenAIClient();
   const diagnosisResponse = await client.responses.parse({
-    model: "gpt-5.4-nano",
+    model: "gpt-5.4-mini",
     instructions: buildResumeDiagnosisInstructions(),
     input: buildResumeDiagnosisPrompt({
       jobTitle: input.jobTitle,
@@ -161,7 +161,7 @@ export async function runResumeOptimization(input: ReturnType<typeof parseOptimi
   const client = getOpenAIClient();
 
   const optimizationResponse = await client.responses.parse({
-    model: "gpt-5.4-nano",
+    model: "gpt-5.4-mini",
     instructions: buildResumeOptimizationInstructions(),
     input: buildResumeOptimizationPrompt({
       jobProfile: input.jobProfile,
