@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import {
   type ResumeOptimizationResult,
@@ -15,9 +15,12 @@ import { useToast } from "@/components/toast";
 import { StepStrip } from "@/components/ui";
 import { ExpandableInfoBox } from "@/components/interactive";
 
-export default function ResumeLoadingPage() {
+function ResumeLoadingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { push } = useToast();
+  const readonly = searchParams.get("readonly") === "1";
+  const recordId = searchParams.get("recordId");
   const [resumeExpanded, setResumeExpanded] = useState(false);
   const [jobExpanded, setJobExpanded] = useState(false);
   const {
@@ -36,8 +39,9 @@ export default function ResumeLoadingPage() {
   } = usePrototypeStore();
   const hasStarted = useRef(false);
   const isActive = useRef(true);
-  const activeRecordId = currentResumeRecordId;
+  const activeRecordId = recordId ?? currentResumeRecordId;
   const record = activeRecordId ? getResumeRecord(activeRecordId) : undefined;
+  const pageDraft = record?.draft ?? resumeDraft;
   const timelineLevel = getResumeRecordTimelineLevel(record);
   const canViewUpload = timelineLevel >= 0;
   const canViewDiagnosis = timelineLevel >= 1;
@@ -51,6 +55,16 @@ export default function ResumeLoadingPage() {
   }, []);
 
   useEffect(() => {
+    if (readonly && recordId && !record) {
+      router.replace("/profile/records/resume");
+    }
+  }, [readonly, recordId, record, router]);
+
+  useEffect(() => {
+    if (readonly) {
+      return;
+    }
+
     if (resumeOptimization) {
       if (isActive.current) {
         router.replace("/resume/result");
@@ -132,11 +146,31 @@ export default function ResumeLoadingPage() {
     router,
     setResumeOptimization,
     setResumeOptimizationStatus,
-    updateResumeRecordStatus
+    updateResumeRecordStatus,
+    readonly
   ]);
 
-  const fileName = resumeDraft.extractedResume?.filename ?? "已上传简历";
-  const jobTitle = resumeDraft.jobTitle.trim() || "目标岗位";
+  useEffect(() => {
+    if (!readonly || !record) {
+      return;
+    }
+
+    if (record.status === "optimized") {
+      router.replace(`/resume/result?recordId=${record.id}&readonly=1`);
+      return;
+    }
+
+    if (record.status === "diagnosed" || record.status === "diagnose_failed") {
+      router.replace(`/resume/diagnosis-result?recordId=${record.id}&readonly=1`);
+    }
+  }, [readonly, record, router]);
+
+  if (readonly && recordId && !record) {
+    return null;
+  }
+
+  const fileName = pageDraft.extractedResume?.filename ?? "已上传简历";
+  const jobTitle = pageDraft.jobTitle.trim() || "目标岗位";
 
   return (
     <div>
@@ -188,14 +222,14 @@ export default function ResumeLoadingPage() {
         <ExpandableInfoBox
           title="上传的简历"
           subtitle={fileName}
-          content={resumeDraft.extractedResume?.content || ""}
+          content={pageDraft.extractedResume?.content || ""}
           isExpanded={resumeExpanded}
           onToggle={setResumeExpanded}
         />
         <ExpandableInfoBox
           title="目标岗位"
           subtitle={jobTitle}
-          content={`岗位标题：${resumeDraft.jobTitle}\n岗位类型：${resumeDraft.jobType === "intern" ? "校招/实习" : "社招"}\n\n岗位内容：\n${resumeDraft.jobDescription}\n${resumeDraft.notes ? `\n其他备注：\n${resumeDraft.notes}` : ""}`}
+          content={`岗位标题：${pageDraft.jobTitle}\n岗位类型：${pageDraft.jobType === "intern" ? "校招/实习" : "社招"}\n\n岗位内容：\n${pageDraft.jobDescription}\n${pageDraft.notes ? `\n其他备注：\n${pageDraft.notes}` : ""}`}
           isExpanded={jobExpanded}
           onToggle={setJobExpanded}
         />
@@ -205,25 +239,37 @@ export default function ResumeLoadingPage() {
         <div className="loader-ring" aria-hidden />
         <div>
           <h2 className="section-title" style={{ marginBottom: 10 }}>
-            AI正在优化您的简历...
+            {readonly ? "这条记录正在优化中..." : "AI正在优化您的简历..."}
           </h2>
           <div
             className="page-subtitle"
             style={{ marginTop: 0, wordBreak: "break-word", overflowWrap: "anywhere" }}
           >
-            <div>预计需要1~2分钟，请勿关闭或刷新当前网页</div>
-            <div style={{ marginTop: 10 }}>生成完成后，结果会自动保存到“我的记录”，后续可继续查看和操作</div>
+            <div>{readonly ? "当前设备为只读查看，不会重复触发新的优化任务。" : "预计需要1~2分钟，请勿关闭或刷新当前网页"}</div>
+            <div style={{ marginTop: 10 }}>
+              {readonly
+                ? "请稍后回到记录列表刷新查看；原设备完成后，这里也能看到同一条结果。"
+                : "生成完成后，结果会自动保存到“我的记录”，后续可继续查看和操作"}
+            </div>
           </div>
         </div>
         <Link href="/profile/records/resume" className="button-secondary">
           查看我的记录-AI简历优化
         </Link>
-        {resumeOptimizationStatus === "failed" ? (
+        {!readonly && resumeOptimizationStatus === "failed" ? (
           <Link href="/resume/upload" className="button-secondary">
             返回修改并重试
           </Link>
         ) : null}
       </div>
     </div>
+  );
+}
+
+export default function ResumeLoadingPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResumeLoadingContent />
+    </Suspense>
   );
 }

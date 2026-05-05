@@ -26,20 +26,26 @@ export default function ResumeRecordDetailPage() {
     }
 
     if (record.status === "uploaded" || record.status === "diagnosing" || record.status === "diagnose_failed") {
-      router.replace("/resume/diagnosis-loading");
+      router.replace(`/resume/diagnosis-loading?recordId=${record.id}&readonly=1`);
       return;
     }
 
     if (record.status === "optimizing" || record.status === "optimize_failed") {
-      router.replace("/resume/loading");
+      router.replace(`/resume/loading?recordId=${record.id}&readonly=1`);
       return;
     }
 
-    router.replace(
-      record.status === "optimized"
-        ? `/resume/result?recordId=${record.id}&readonly=1`
-        : `/resume/diagnosis-result?recordId=${record.id}&readonly=1`
-    );
+    if (record.status === "optimized") {
+      router.replace(`/resume/result?recordId=${record.id}&readonly=1`);
+      return;
+    }
+
+    if (record.status === "diagnosed") {
+      router.replace(`/resume/diagnosis-result?recordId=${record.id}&edit=1`);
+      return;
+    }
+
+    router.replace(`/resume/diagnosis-result?recordId=${record.id}&readonly=1`);
   }, [isHydrated, record, restoreResumeRecord, router]);
 
   if (!isHydrated) {

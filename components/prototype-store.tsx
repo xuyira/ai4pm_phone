@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from "react";
 import { PrototypeStoreToastProvider } from "@/components/toast";
@@ -604,6 +605,8 @@ export function PrototypeStoreProvider({
     useState<ResumeOptimizationStatus>("idle");
   const [resumeOptimizationError, setResumeOptimizationError] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [hasLoadedResumeRecords, setHasLoadedResumeRecords] = useState(false);
+  const lastSyncedResumeRecordsRef = useRef<string | null>(null);
 
   useEffect(() => {
     const saved = window.localStorage.getItem(HIDDEN_KEY);
@@ -632,13 +635,25 @@ export function PrototypeStoreProvider({
           return;
         }
 
-        setResumeRecords(normalizeResumeRecords(payload.records || []));
+        const savedResumeRecords = window.localStorage.getItem(RESUME_RECORDS_KEY);
+        const localRecords = savedResumeRecords
+          ? (JSON.parse(savedResumeRecords) as ResumeFlowRecord[])
+          : [];
+        const mergedRecords = normalizeResumeRecords([...(payload.records || []), ...localRecords]);
+
+        lastSyncedResumeRecordsRef.current = JSON.stringify(mergedRecords);
+        setResumeRecords(mergedRecords);
+        setHasLoadedResumeRecords(true);
       })
       .catch(() => {
         const savedResumeRecords = window.localStorage.getItem(RESUME_RECORDS_KEY);
         if (savedResumeRecords && !cancelled) {
           const parsed = JSON.parse(savedResumeRecords) as ResumeFlowRecord[];
           setResumeRecords(normalizeResumeRecords(parsed));
+        }
+
+        if (!cancelled) {
+          setHasLoadedResumeRecords(true);
         }
       });
 
@@ -1081,7 +1096,7 @@ export function PrototypeStoreProvider({
   }, [isHydrated, resumeRecords]);
 
   useEffect(() => {
-    if (!isHydrated) {
+    if (!isHydrated || !hasLoadedResumeRecords) {
       return;
     }
 
@@ -1093,10 +1108,31 @@ export function PrototypeStoreProvider({
       body: JSON.stringify({
         records: resumeRecords
       })
-    }).catch(() => {
-      // Local storage remains as a fallback if shared sync fails.
-    });
-  }, [isHydrated, resumeRecords]);
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          return;
+        }
+
+        lastSyncedResumeRecordsRef.current = JSON.stringify(resumeRecords);
+      })
+      .catch(() => {
+        // Local storage remains as a fallback if shared sync fails.
+      });
+  }, [hasLoadedResumeRecords, isHydrated, resumeRecords]);
+
+  useEffect(() => {
+    if (!hasLoadedResumeRecords) {
+      return;
+    }
+
+    const serializedRecords = JSON.stringify(resumeRecords);
+    if (lastSyncedResumeRecordsRef.current === serializedRecords) {
+      return;
+    }
+
+    lastSyncedResumeRecordsRef.current = null;
+  }, [hasLoadedResumeRecords, resumeRecords]);
 
   const visibleRecords = useMemo(
     () => staticRecords.filter((item) => !hiddenIds.includes(item.id)),

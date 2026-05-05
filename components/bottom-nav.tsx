@@ -27,11 +27,13 @@ export function BottomNav() {
             className={`bottom-link${isActive ? " is-active" : ""}`}
             onClick={(event) => {
               if (item.href === "/") {
-                event.preventDefault();
-                router.push("/");
-                setTimeout(() => {
+                if (pathname === "/") {
+                  event.preventDefault();
                   clearResumeDraft();
-                }, 0);
+                  return;
+                }
+
+                router.push("/");
               }
             }}
           >

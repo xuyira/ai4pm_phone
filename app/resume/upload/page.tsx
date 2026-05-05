@@ -16,6 +16,7 @@ function ResumeUploadContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { push } = useToast();
+  const isFreshEntry = searchParams.get("fresh") === "1";
   const readonly = searchParams.get("readonly") === "1";
   const recordId = searchParams.get("recordId");
   const {
@@ -24,7 +25,8 @@ function ResumeUploadContent() {
     resumeDraft,
     updateResumeDraft,
     getResumeRecord,
-    createResumeRewriteRecord
+    createResumeRewriteRecord,
+    clearResumeDraft
   } = usePrototypeStore();
   const linkedRecord = recordId ? getResumeRecord(recordId) : undefined;
   const activeRecordId = recordId ?? currentResumeRecordId;
@@ -40,6 +42,15 @@ function ResumeUploadContent() {
       router.replace("/profile/records/resume");
     }
   }, [linkedRecord, readonly, recordId, router]);
+
+  useEffect(() => {
+    if (!isFreshEntry || readonly || recordId) {
+      return;
+    }
+
+    clearResumeDraft();
+    router.replace("/resume/upload");
+  }, [clearResumeDraft, isFreshEntry, readonly, recordId, router]);
 
   const handleStart = () => {
     if (!resumeDraft.extractedResume?.content.trim()) {

@@ -41,7 +41,7 @@ export const features = [
     type: "resume" as const,
     title: "AI简历优化",
     desc: "上传简历和岗位 JD，生成优化结果，并展示简历表现与岗位匹配评分。",
-    href: "/resume/upload",
+    href: "/resume/upload?fresh=1",
     tone: "warm-lime",
     icon: "▣",
     tag: "已开放"

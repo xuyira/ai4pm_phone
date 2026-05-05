@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { ExpandableInfoBox } from "@/components/interactive";
@@ -15,9 +16,12 @@ import {
 import { useToast } from "@/components/toast";
 import { StepStrip } from "@/components/ui";
 
-export default function ResumeDiagnosisLoadingPage() {
+function ResumeDiagnosisLoadingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { push } = useToast();
+  const readonly = searchParams.get("readonly") === "1";
+  const recordId = searchParams.get("recordId");
   const [resumeExpanded, setResumeExpanded] = useState(false);
   const [jobExpanded, setJobExpanded] = useState(false);
   const {
@@ -34,8 +38,9 @@ export default function ResumeDiagnosisLoadingPage() {
   } = usePrototypeStore();
   const hasStarted = useRef(false);
   const isActive = useRef(true);
-  const activeRecordId = currentResumeRecordId;
+  const activeRecordId = recordId ?? currentResumeRecordId;
   const record = activeRecordId ? getResumeRecord(activeRecordId) : undefined;
+  const pageDraft = record?.draft ?? resumeDraft;
   const timelineLevel = getResumeRecordTimelineLevel(record);
   const canViewUpload = timelineLevel >= 0;
   const canViewDiagnosis = timelineLevel >= 1;
@@ -49,6 +54,16 @@ export default function ResumeDiagnosisLoadingPage() {
   }, []);
 
   useEffect(() => {
+    if (readonly && recordId && !record) {
+      router.replace("/profile/records/resume");
+    }
+  }, [readonly, recordId, record, router]);
+
+  useEffect(() => {
+    if (readonly) {
+      return;
+    }
+
     if (resumeDiagnosis) {
       if (isActive.current) {
         router.replace("/resume/diagnosis-result");
@@ -131,8 +146,28 @@ export default function ResumeDiagnosisLoadingPage() {
     setResumeDiagnosis,
     setResumeDiagnosisStatus,
     updateResumeRecordStatus,
-    resumeDraft.projectMaterials
+    resumeDraft.projectMaterials,
+    readonly
   ]);
+
+  useEffect(() => {
+    if (!readonly || !record) {
+      return;
+    }
+
+    if (record.status === "diagnosed" || record.status === "optimized") {
+      router.replace(`/resume/diagnosis-result?recordId=${record.id}&readonly=1`);
+      return;
+    }
+
+    if (record.status === "optimize_failed") {
+      router.replace(`/resume/result?recordId=${record.id}&readonly=1`);
+    }
+  }, [readonly, record, router]);
+
+  if (readonly && recordId && !record) {
+    return null;
+  }
 
   return (
     <div>
@@ -183,15 +218,15 @@ export default function ResumeDiagnosisLoadingPage() {
       <section className="section form-stack">
         <ExpandableInfoBox
           title="上传的简历"
-          subtitle={resumeDraft.extractedResume?.filename || "已上传简历"}
-          content={resumeDraft.extractedResume?.content || ""}
+          subtitle={pageDraft.extractedResume?.filename || "已上传简历"}
+          content={pageDraft.extractedResume?.content || ""}
           isExpanded={resumeExpanded}
           onToggle={setResumeExpanded}
         />
         <ExpandableInfoBox
           title="目标岗位"
-          subtitle={resumeDraft.jobTitle || "目标岗位"}
-          content={`岗位标题：${resumeDraft.jobTitle}\n岗位类型：${resumeDraft.jobType === "intern" ? "校招/实习" : "社招"}\n\n岗位内容：\n${resumeDraft.jobDescription}\n${resumeDraft.notes ? `\n其他备注：\n${resumeDraft.notes}` : ""}`}
+          subtitle={pageDraft.jobTitle || "目标岗位"}
+          content={`岗位标题：${pageDraft.jobTitle}\n岗位类型：${pageDraft.jobType === "intern" ? "校招/实习" : "社招"}\n\n岗位内容：\n${pageDraft.jobDescription}\n${pageDraft.notes ? `\n其他备注：\n${pageDraft.notes}` : ""}`}
           isExpanded={jobExpanded}
           onToggle={setJobExpanded}
         />
@@ -205,13 +240,15 @@ export default function ResumeDiagnosisLoadingPage() {
           </h2>
           <div className="page-subtitle" style={{ marginTop: 0 }}>
             <div>预计需要1~2分钟，请勿关闭或刷新当前网页</div>
-            <div style={{ marginTop: 10 }}>生成完成后，结果会自动保存到“我的记录”，后续可继续查看和操作</div>
+            <div style={{ marginTop: 10 }}>
+              生成完成后，结果会自动保存到“我的记录”，后续可继续查看和操作
+            </div>
           </div>
         </div>
         <Link href="/profile/records/resume" className="button-secondary">
           查看我的记录-AI简历优化
         </Link>
-        {resumeDiagnosisStatus === "failed" ? (
+        {!readonly && resumeDiagnosisStatus === "failed" ? (
           <div className="form-stack" style={{ width: "100%" }}>
             <div className="hint-banner">{resumeDiagnosisError || "诊断失败，请重试。"}</div>
             <Link href="/resume/upload" className="button-secondary">
@@ -221,5 +258,13 @@ export default function ResumeDiagnosisLoadingPage() {
         ) : null}
       </div>
     </div>
+  );
+}
+
+export default function ResumeDiagnosisLoadingPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResumeDiagnosisLoadingContent />
+    </Suspense>
   );
 }
