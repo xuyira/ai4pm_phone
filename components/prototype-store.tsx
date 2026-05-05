@@ -604,20 +604,12 @@ export function PrototypeStoreProvider({
     useState<ResumeOptimizationStatus>("idle");
   const [resumeOptimizationError, setResumeOptimizationError] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
-  const [hasLoadedSharedResumeRecords, setHasLoadedSharedResumeRecords] = useState(false);
 
   useEffect(() => {
     const saved = window.localStorage.getItem(HIDDEN_KEY);
     if (saved) {
       setHiddenIds(JSON.parse(saved) as string[]);
     }
-
-    const savedResumeRecords = window.localStorage.getItem(RESUME_RECORDS_KEY);
-    if (savedResumeRecords) {
-      const parsed = JSON.parse(savedResumeRecords) as ResumeFlowRecord[];
-      setResumeRecords(normalizeResumeRecords(parsed));
-    }
-
     setIsHydrated(true);
   }, []);
 
@@ -643,11 +635,10 @@ export function PrototypeStoreProvider({
         setResumeRecords(normalizeResumeRecords(payload.records || []));
       })
       .catch(() => {
-        // Keep local fallback records when shared storage is unavailable.
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setHasLoadedSharedResumeRecords(true);
+        const savedResumeRecords = window.localStorage.getItem(RESUME_RECORDS_KEY);
+        if (savedResumeRecords && !cancelled) {
+          const parsed = JSON.parse(savedResumeRecords) as ResumeFlowRecord[];
+          setResumeRecords(normalizeResumeRecords(parsed));
         }
       });
 
@@ -1090,7 +1081,7 @@ export function PrototypeStoreProvider({
   }, [isHydrated, resumeRecords]);
 
   useEffect(() => {
-    if (!isHydrated || !hasLoadedSharedResumeRecords) {
+    if (!isHydrated) {
       return;
     }
 
@@ -1105,7 +1096,7 @@ export function PrototypeStoreProvider({
     }).catch(() => {
       // Local storage remains as a fallback if shared sync fails.
     });
-  }, [hasLoadedSharedResumeRecords, isHydrated, resumeRecords]);
+  }, [isHydrated, resumeRecords]);
 
   const visibleRecords = useMemo(
     () => staticRecords.filter((item) => !hiddenIds.includes(item.id)),
