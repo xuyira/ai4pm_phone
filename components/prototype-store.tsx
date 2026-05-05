@@ -336,6 +336,8 @@ export type ResumeRecordStatus =
 export type ResumeFlowRecord = {
   id: string;
   type: "resume";
+  sourceRecordId?: string | null;
+  supersededByRecordId?: string | null;
   jobTitle: string;
   title: string;
   timestamp: string;
@@ -521,6 +523,14 @@ function buildResumeRecordItem(record: ResumeFlowRecord): RecordItem {
   };
 }
 
+function isResumeRecordVisible(record: ResumeFlowRecord) {
+  if (!record.supersededByRecordId) {
+    return true;
+  }
+
+  return record.status === "optimized" || record.status === "optimizing" || record.status === "optimize_failed";
+}
+
 function getRecordProgressRank(status: ResumeRecordStatus) {
   if (status === "optimized" || status === "optimize_failed") {
     return 3;
@@ -553,6 +563,8 @@ function normalizeResumeRecords(records: ResumeFlowRecord[]) {
     if (!existing || Math.abs(existing.updatedAt - record.updatedAt) > 30 * 60 * 1000) {
       merged.set(signature, {
         ...record,
+        sourceRecordId: record.sourceRecordId || null,
+        supersededByRecordId: record.supersededByRecordId || null,
         quickSupplementAnswers: record.quickSupplementAnswers || {}
       });
       continue;
@@ -565,6 +577,8 @@ function normalizeResumeRecords(records: ResumeFlowRecord[]) {
 
     merged.set(signature, {
       ...keep,
+      sourceRecordId: keep.sourceRecordId || mergeFrom.sourceRecordId || null,
+      supersededByRecordId: keep.supersededByRecordId || mergeFrom.supersededByRecordId || null,
       diagnosis: keep.diagnosis || mergeFrom.diagnosis,
       diagnosisActions:
         keep.diagnosisActions.length > 0 ? keep.diagnosisActions : mergeFrom.diagnosisActions,
@@ -696,6 +710,8 @@ export function PrototypeStoreProvider({
     const nextRecord: ResumeFlowRecord = {
       id: recordId,
       type: "resume",
+      sourceRecordId: existingRecord?.sourceRecordId || null,
+      supersededByRecordId: existingRecord?.supersededByRecordId || null,
       jobTitle: resumeDraft.jobTitle.trim() || existingRecord?.jobTitle || "",
       title: resumeDraft.jobTitle.trim() || existingRecord?.title || "历史记录",
       timestamp: existingRecord?.timestamp || formatTimestamp(new Date(now)),
@@ -881,11 +897,13 @@ export function PrototypeStoreProvider({
     const recordId = currentResumeRecordId ?? `resume-${now}`;
     const title = resumeDraft.jobTitle.trim() || "历史记录";
     const nextDiagnosis = cloneJsonValue(result);
-    const nextRecord: ResumeFlowRecord = {
-      id: recordId,
-      type: "resume",
-      jobTitle: resumeDraft.jobTitle.trim(),
-      title,
+      const nextRecord: ResumeFlowRecord = {
+        id: recordId,
+        type: "resume",
+        sourceRecordId: null,
+        supersededByRecordId: null,
+        jobTitle: resumeDraft.jobTitle.trim(),
+        title,
       timestamp: formatTimestamp(new Date(now)),
       updatedAt: now,
       status: "diagnosed",
@@ -1029,6 +1047,8 @@ export function PrototypeStoreProvider({
     const nextRecord: ResumeFlowRecord = {
       id: recordId,
       type: "resume",
+      sourceRecordId: existingRecord?.sourceRecordId || null,
+      supersededByRecordId: existingRecord?.supersededByRecordId || null,
       jobTitle: resumeDraft.jobTitle.trim() || existingRecord?.jobTitle || "",
       title,
       timestamp: existingRecord?.timestamp || formatTimestamp(new Date(now)),
@@ -1219,6 +1239,8 @@ export function PrototypeStoreProvider({
       const nextRecord: ResumeFlowRecord = {
         id: nextId,
         type: "resume",
+        sourceRecordId: source.id,
+        supersededByRecordId: null,
         jobTitle: source.jobTitle,
         title: source.title || "历史记录",
         timestamp: formatTimestamp(new Date(now)),
@@ -1233,6 +1255,10 @@ export function PrototypeStoreProvider({
       };
 
       upsertResumeRecord(nextRecord);
+      upsertResumeRecord({
+        ...source,
+        supersededByRecordId: nextId
+      });
       setCurrentResumeRecordId(nextId);
       setResumeDraft(nextDraft);
       setResumeDiagnosisState(nextDiagnosis);
@@ -1277,6 +1303,8 @@ export function PrototypeStoreProvider({
       const nextRecord: ResumeFlowRecord = {
         id: nextId,
         type: "resume",
+        sourceRecordId: source.id,
+        supersededByRecordId: null,
         jobTitle: source.jobTitle,
         title: source.title || "历史记录",
         timestamp: formatTimestamp(new Date(now)),
@@ -1291,6 +1319,10 @@ export function PrototypeStoreProvider({
       };
 
       upsertResumeRecord(nextRecord);
+      upsertResumeRecord({
+        ...source,
+        supersededByRecordId: nextId
+      });
       setCurrentResumeRecordId(nextId);
       setResumeDraft(nextDraft);
       setResumeDiagnosisState(null);
@@ -1327,6 +1359,7 @@ export function PrototypeStoreProvider({
       getRecordsByType: (type) =>
         type === "resume"
           ? resumeRecords
+              .filter(isResumeRecordVisible)
               .filter((item) => item.status !== "uploaded")
               .slice()
               .sort((a, b) => b.updatedAt - a.updatedAt)
