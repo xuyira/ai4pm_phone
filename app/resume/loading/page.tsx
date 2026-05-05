@@ -42,6 +42,11 @@ function ResumeLoadingContent() {
   const activeRecordId = recordId ?? currentResumeRecordId;
   const record = activeRecordId ? getResumeRecord(activeRecordId) : undefined;
   const pageDraft = record?.draft ?? resumeDraft;
+  const activeDiagnosis = record?.diagnosis ?? resumeDiagnosis;
+  const activeDiagnosisActions = record?.diagnosisActions ?? resumeDiagnosisActions;
+  const activeQuickSupplementAnswers =
+    record?.quickSupplementAnswers ?? resumeQuickSupplementAnswers;
+  const activeOptimization = record?.optimization ?? resumeOptimization;
   const timelineLevel = getResumeRecordTimelineLevel(record);
   const canViewUpload = timelineLevel >= 0;
   const canViewDiagnosis = timelineLevel >= 1;
@@ -65,9 +70,9 @@ function ResumeLoadingContent() {
       return;
     }
 
-    if (resumeOptimization) {
+    if (activeOptimization) {
       if (isActive.current) {
-        router.replace("/resume/result");
+        router.replace(recordId ? `/resume/result?recordId=${recordId}` : "/resume/result");
       }
       return;
     }
@@ -76,9 +81,9 @@ function ResumeLoadingContent() {
       return;
     }
 
-    if (!resumeDiagnosis) {
+    if (!activeDiagnosis) {
       push("缺少第二节点的诊断结果，已返回诊断页。");
-      router.replace("/resume/diagnosis-result");
+      router.replace(recordId ? `/resume/diagnosis-result?recordId=${recordId}` : "/resume/diagnosis-result");
       return;
     }
 
@@ -93,14 +98,14 @@ function ResumeLoadingContent() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        jobProfile: resumeDiagnosis.jobProfile,
-        jdResumeEvidenceMatrix: resumeDiagnosis.jdResumeEvidenceMatrix,
-        originalJobDescription: resumeDraft.jobDescription,
-        originalResumeText: resumeDraft.extractedResume?.content || "",
-        diagnosisScores: resumeDiagnosis.diagnosisScores,
-        diagnosisActions: resumeDiagnosisActions,
-        quickSupplementQuestions: resumeDiagnosis.quickSupplementQuestions,
-        quickSupplementAnswers: resumeQuickSupplementAnswers,
+        jobProfile: activeDiagnosis.jobProfile,
+        jdResumeEvidenceMatrix: activeDiagnosis.jdResumeEvidenceMatrix,
+        originalJobDescription: pageDraft.jobDescription,
+        originalResumeText: pageDraft.extractedResume?.content || "",
+        diagnosisScores: activeDiagnosis.diagnosisScores,
+        diagnosisActions: activeDiagnosisActions,
+        quickSupplementQuestions: activeDiagnosis.quickSupplementQuestions,
+        quickSupplementAnswers: activeQuickSupplementAnswers,
       })
     })
       .then(async (response) => {
@@ -128,7 +133,7 @@ function ResumeLoadingContent() {
 
         setResumeOptimization(payload.result);
         if (isActive.current) {
-          router.replace("/resume/result");
+          router.replace(recordId ? `/resume/result?recordId=${recordId}` : "/resume/result");
         }
       })
       .catch((error: Error) => {
@@ -138,10 +143,13 @@ function ResumeLoadingContent() {
   }, [
     ensureResumeRecord,
     push,
-    resumeDiagnosis,
-    resumeDiagnosisActions,
-    resumeQuickSupplementAnswers,
-    resumeOptimization,
+    activeDiagnosis,
+    activeDiagnosisActions,
+    activeQuickSupplementAnswers,
+    activeOptimization,
+    pageDraft.extractedResume,
+    pageDraft.jobDescription,
+    recordId,
     resumeOptimizationStatus,
     router,
     setResumeOptimization,

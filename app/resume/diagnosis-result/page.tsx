@@ -187,7 +187,7 @@ function ResumeDiagnosisResultContent() {
 
       setResumeDiagnosisActionsForRecord(nextId, draftDiagnosisActions);
       setResumeQuickSupplementAnswersForRecord(nextId, draftQuickAnswers);
-      router.push("/resume/loading");
+      router.push(`/resume/loading?recordId=${nextId}`);
       return;
     }
 
