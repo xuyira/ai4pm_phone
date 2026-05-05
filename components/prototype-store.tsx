@@ -880,6 +880,7 @@ export function PrototypeStoreProvider({
     const now = Date.now();
     const recordId = currentResumeRecordId ?? `resume-${now}`;
     const title = resumeDraft.jobTitle.trim() || "历史记录";
+    const nextDiagnosis = cloneJsonValue(result);
     const nextRecord: ResumeFlowRecord = {
       id: recordId,
       type: "resume",
@@ -889,12 +890,14 @@ export function PrototypeStoreProvider({
       updatedAt: now,
       status: "diagnosed",
       draft: cloneDraft(resumeDraft),
-      diagnosis: result,
+      diagnosis: nextDiagnosis,
       diagnosisActions: currentResumeRecordId
-        ? resumeRecords.find((item) => item.id === recordId)?.diagnosisActions || []
+        ? cloneJsonValue(resumeRecords.find((item) => item.id === recordId)?.diagnosisActions || [])
         : [],
       quickSupplementAnswers: currentResumeRecordId
-        ? resumeRecords.find((item) => item.id === recordId)?.quickSupplementAnswers || {}
+        ? cloneJsonValue(
+            resumeRecords.find((item) => item.id === recordId)?.quickSupplementAnswers || {}
+          )
         : {},
       optimization: null,
       lastError: null
@@ -902,13 +905,14 @@ export function PrototypeStoreProvider({
 
     upsertResumeRecord(nextRecord);
     setCurrentResumeRecordId(recordId);
-    setResumeDiagnosisState(result);
+    setResumeDiagnosisState(nextDiagnosis);
     setResumeDiagnosisStatusState("completed");
     setResumeDiagnosisError(null);
   }, [currentResumeRecordId, resumeDraft, resumeRecords, upsertResumeRecord]);
 
   const setResumeDiagnosisActions = useCallback((actions: ResumeDiagnosisActionInput[]) => {
-    setResumeDiagnosisActionsState(actions);
+    const nextActions = cloneJsonValue(actions);
+    setResumeDiagnosisActionsState(nextActions);
     if (!currentResumeRecordId) {
       return;
     }
@@ -918,7 +922,7 @@ export function PrototypeStoreProvider({
         item.id === currentResumeRecordId
           ? {
               ...item,
-              diagnosisActions: actions,
+              diagnosisActions: nextActions,
               updatedAt: Date.now()
             }
           : item
@@ -928,8 +932,9 @@ export function PrototypeStoreProvider({
 
   const setResumeDiagnosisActionsForRecord = useCallback(
     (recordId: string, actions: ResumeDiagnosisActionInput[]) => {
+      const nextActions = cloneJsonValue(actions);
       if (currentResumeRecordId === recordId) {
-        setResumeDiagnosisActionsState(actions);
+        setResumeDiagnosisActionsState(nextActions);
       }
 
       setResumeRecords((current) =>
@@ -937,7 +942,7 @@ export function PrototypeStoreProvider({
           item.id === recordId
             ? {
                 ...item,
-                diagnosisActions: actions,
+                diagnosisActions: nextActions,
                 updatedAt: Date.now()
               }
             : item
@@ -948,7 +953,8 @@ export function PrototypeStoreProvider({
   );
 
   const setResumeQuickSupplementAnswers = useCallback((answers: Record<string, string>) => {
-    setResumeQuickSupplementAnswersState(answers);
+    const nextAnswers = cloneJsonValue(answers);
+    setResumeQuickSupplementAnswersState(nextAnswers);
     if (!currentResumeRecordId) {
       return;
     }
@@ -958,7 +964,7 @@ export function PrototypeStoreProvider({
         item.id === currentResumeRecordId
           ? {
               ...item,
-              quickSupplementAnswers: answers,
+              quickSupplementAnswers: nextAnswers,
               updatedAt: Date.now()
             }
           : item
@@ -968,8 +974,9 @@ export function PrototypeStoreProvider({
 
   const setResumeQuickSupplementAnswersForRecord = useCallback(
     (recordId: string, answers: Record<string, string>) => {
+      const nextAnswers = cloneJsonValue(answers);
       if (currentResumeRecordId === recordId) {
-        setResumeQuickSupplementAnswersState(answers);
+        setResumeQuickSupplementAnswersState(nextAnswers);
       }
 
       setResumeRecords((current) =>
@@ -977,7 +984,7 @@ export function PrototypeStoreProvider({
           item.id === recordId
             ? {
                 ...item,
-                quickSupplementAnswers: answers,
+                quickSupplementAnswers: nextAnswers,
                 updatedAt: Date.now()
               }
             : item
@@ -1005,6 +1012,20 @@ export function PrototypeStoreProvider({
     const recordId = currentResumeRecordId ?? `resume-${now}`;
     const existingRecord = resumeRecords.find((item) => item.id === recordId);
     const title = resumeDraft.jobTitle.trim() || existingRecord?.title || "历史记录";
+    const nextOptimization = cloneJsonValue(result);
+    const nextDiagnosis =
+      existingRecord?.diagnosis
+        ? cloneJsonValue(existingRecord.diagnosis)
+        : resumeDiagnosis
+          ? cloneJsonValue(resumeDiagnosis)
+          : ({
+              jobProfile: result.jobProfile,
+              jdResumeEvidenceMatrix: result.jdResumeEvidenceMatrix,
+              quickSupplementQuestions: [],
+              diagnosisScores: result.beforeScores,
+              summary: "",
+              rawModelOutput: ""
+            } as ResumeDiagnosisResult);
     const nextRecord: ResumeFlowRecord = {
       id: recordId,
       type: "resume",
@@ -1014,27 +1035,21 @@ export function PrototypeStoreProvider({
       updatedAt: now,
       status: "optimized",
       draft: cloneDraft(resumeDraft),
-      diagnosis:
-        existingRecord?.diagnosis || resumeDiagnosis || ({
-          jobProfile: result.jobProfile,
-          jdResumeEvidenceMatrix: result.jdResumeEvidenceMatrix,
-          quickSupplementQuestions: [],
-          diagnosisScores: result.beforeScores,
-          summary: "",
-          rawModelOutput: ""
-        } as ResumeDiagnosisResult),
-      diagnosisActions: resumeDiagnosisActions || existingRecord?.diagnosisActions || [],
+      diagnosis: nextDiagnosis,
+      diagnosisActions: cloneJsonValue(
+        resumeDiagnosisActions || existingRecord?.diagnosisActions || []
+      ),
       quickSupplementAnswers:
         Object.keys(resumeQuickSupplementAnswers).length > 0
-          ? resumeQuickSupplementAnswers
-          : existingRecord?.quickSupplementAnswers || {},
-      optimization: result,
+          ? cloneJsonValue(resumeQuickSupplementAnswers)
+          : cloneJsonValue(existingRecord?.quickSupplementAnswers || {}),
+      optimization: nextOptimization,
       lastError: null
     };
 
     upsertResumeRecord(nextRecord);
     setCurrentResumeRecordId(recordId);
-    setResumeOptimizationState(result);
+    setResumeOptimizationState(nextOptimization);
     setResumeOptimizationStatusState("completed");
     setResumeOptimizationError(null);
   }, [
@@ -1145,11 +1160,16 @@ export function PrototypeStoreProvider({
       return false;
     }
 
+    const nextDiagnosis = record.diagnosis ? cloneJsonValue(record.diagnosis) : null;
+    const nextDiagnosisActions = cloneJsonValue(record.diagnosisActions || []);
+    const nextQuickSupplementAnswers = cloneJsonValue(record.quickSupplementAnswers || {});
+    const nextOptimization = record.optimization ? cloneJsonValue(record.optimization) : null;
+
     setCurrentResumeRecordId(record.id);
     setResumeDraft(cloneDraft(record.draft));
-    setResumeDiagnosisState(record.diagnosis);
-    setResumeDiagnosisActionsState(record.diagnosisActions);
-    setResumeQuickSupplementAnswersState(record.quickSupplementAnswers || {});
+    setResumeDiagnosisState(nextDiagnosis);
+    setResumeDiagnosisActionsState(nextDiagnosisActions);
+    setResumeQuickSupplementAnswersState(nextQuickSupplementAnswers);
     setResumeDiagnosisStatusState(
       record.status === "uploaded"
         ? "idle"
@@ -1157,20 +1177,20 @@ export function PrototypeStoreProvider({
           ? "running"
         : record.status === "diagnose_failed"
           ? "failed"
-          : record.diagnosis
+          : nextDiagnosis
             ? "completed"
             : "idle"
     );
     setResumeDiagnosisError(
       record.status === "diagnose_failed" ? record.lastError || "诊断失败，请重试。" : null
     );
-    setResumeOptimizationState(record.optimization);
+    setResumeOptimizationState(nextOptimization);
     setResumeOptimizationStatusState(
       record.status === "optimizing"
         ? "running"
         : record.status === "optimize_failed"
           ? "failed"
-          : record.optimization
+          : nextOptimization
             ? "completed"
             : "idle"
     );
